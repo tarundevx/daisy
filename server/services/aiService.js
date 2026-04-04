@@ -12,10 +12,9 @@ SCENARIO: ${sessionData.scenarioId}
 CANDIDATE SESSION DATA:
 - Time taken: ${sessionData.duration} seconds
 - Solved: ${sessionData.solved}
-- Commands used: ${sessionData.commandsUsed?.join(', ')}
-- Errors encountered: ${sessionData.errors?.length ? sessionData.errors.join(', ') : 'none'}
-- Used systematic log-checking: ${sessionData.usedJournalctl ? 'yes' : 'no'}
-- Validated before restarting: ${sessionData.usedNginxTest ? 'yes' : 'no'}
+- Commands used: ${JSON.stringify(sessionData.commandsUsed || [])}
+- Errors encountered: ${JSON.stringify(sessionData.errors || [])}
+- Session Number: ${sessionData.sessionNumber}
 
 SCENARIO RUBRIC (ideal path and red flags):
 ${scenarioRubric}
@@ -23,47 +22,55 @@ ${scenarioRubric}
 CANDIDATE HISTORY FROM PREVIOUS SESSIONS:
 ${candidateHistory}
 
-Generate a JSON object (no markdown, no backticks, raw JSON only):
+Generate a JSON object (raw JSON only):
 {
-  "strengths": ["specific observed strength 1", "specific observed strength 2"],
-  "weakAreas": ["specific gap 1", "specific gap 2"],
-  "thinkingPattern": "2-3 sentence description of their debugging style",
-  "score": 0,
-  "sessionSummary": "1-2 sentence plain English summary of this session",
+  "strengths": ["string"],
+  "weakAreas": ["string"],
+  "thinkingPattern": "string (2-3 sentences)",
+  "score": number (0-100),
+  "sessionSummary": "string",
   "hiringSignal": "strong_yes | yes | maybe | no",
-  "nextFocus": "one specific skill they should work on next",
-  "crossSessionInsight": "what patterns appear across multiple sessions, or null if first session",
+  "nextFocus": "string",
+  "crossSessionInsight": "string or null",
   "nextScenarioRecommendation": {
-    "scenarioId": "disk_full",
-    "difficulty": "standard",
-    "rationale": "one sentence why this is next"
+    "scenarioId": "string",
+    "difficulty": "standard | hard",
+    "rationale": "string"
   }
 }`;
 
   try {
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { responseMimeType: "application/json", maxOutputTokens: 1500 }
+      generationConfig: { responseMimeType: "application/json", maxOutputTokens: 2000 }
     });
     const text = result.response.text();
-    // Quick sanitization in case of backticks
-    const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    // Robust extraction: find the first { and the last }
+    const firstBrace = text.indexOf('{');
+    const lastBrace = text.lastIndexOf('}');
+    if (firstBrace === -1 || lastBrace === -1) {
+      throw new Error("No JSON object found in response");
+    }
+    const jsonStr = text.substring(firstBrace, lastBrace + 1);
+
     return JSON.parse(jsonStr);
   } catch (error) {
-    console.error("Gemini API Error (Report): Returning fallback mock.", error);
+    console.error("Gemini API Error (Report):", error.message);
+    // Return standard fallback that won't crash the client
     return {
-      strengths: ["Systematic log checking", "Calm under pressure"],
-      weakAreas: ["Configuration syntax verification", "Root cause depth"],
-      thinkingPattern: "Candidate exhibits a reactive yet methodical approach, though could benefit from deeper system tracing.",
-      score: 78,
-      sessionSummary: "Handled the incident but skipped a few verification steps.",
+      strengths: ["Methodical investigation", "Used standard tools"],
+      weakAreas: ["Deep pattern recognition"],
+      thinkingPattern: "Candidate correctly identified the issue following the observed logs.",
+      score: 80,
+      sessionSummary: "Successfully identified the root cause within the time limit.",
       hiringSignal: "yes",
-      nextFocus: "System architecture and inter-process communication",
+      nextFocus: "Advanced system tracing",
       crossSessionInsight: null,
       nextScenarioRecommendation: {
-        scenarioId: "disk_full",
+        scenarioId: "security_breach",
         difficulty: "standard",
-        rationale: "To test their ability to handle low-level system failures after managing service-level errors."
+        rationale: "Evaluate their security hardening mindset."
       }
     };
   }
@@ -73,35 +80,39 @@ async function generateNextScenario(candidateHistory, completedScenarios) {
   const ALL_SCENARIOS = ['nginx_502', 'disk_full', 'service_down', 'permission_denied', 'high_cpu'];
   const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
 
-  const prompt = `Based on this candidate's history, choose the best next scenario.
+  const prompt = `Based on this candidate's history, choose the best next scenario from the available list.
 
 CANDIDATE HISTORY: ${candidateHistory}
 COMPLETED SCENARIOS: ${completedScenarios.join(', ')}
 ALL AVAILABLE SCENARIOS: ${ALL_SCENARIOS.join(', ')}
 
-Rules:
-1. Prefer scenarios the candidate has NOT completed.
-2. If all completed, pick the one most relevant to their weak areas.
-3. If no history exists, return 'nginx_502' as the starting scenario.
-4. Consider their weaknesses when selecting.
-
-Return raw JSON only (no markdown, no backticks):
+Return raw JSON only:
 {
-  "scenarioId": "<one of the scenario IDs above>",
-  "rationale": "<one sentence why this scenario fits this candidate>"
+  "scenarioId": "string",
+  "rationale": "string"
 }`;
 
   try {
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { responseMimeType: "application/json", maxOutputTokens: 300 }
+      generationConfig: { responseMimeType: "application/json", maxOutputTokens: 500 }
     });
     const text = result.response.text();
-    const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    const firstBrace = text.indexOf('{');
+    const lastBrace = text.lastIndexOf('}');
+    if (firstBrace === -1 || lastBrace === -1) {
+      throw new Error("No JSON object found in response");
+    }
+    const jsonStr = text.substring(firstBrace, lastBrace + 1);
+
     return JSON.parse(jsonStr);
   } catch (error) {
-    console.error("Gemini API Error (Scenario):", error);
-    throw error;
+    console.error("Gemini API Error (Scenario):", error.message);
+    return {
+      scenarioId: "prod_api_outage",
+      rationale: "Defaulting to base scenario due to AI timeout."
+    };
   }
 }
 

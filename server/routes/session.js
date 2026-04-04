@@ -13,7 +13,7 @@ router.post('/start', async (req, res) => {
     
     // Simplification for the hackathon endpoint — if no scenarioId is provided,
     // we would actually call the AI service. But for direct testing as required:
-    const targetScenarioId = scenarioId || 'nginx_502';
+    const targetScenarioId = scenarioId || 'prod_api_outage';
     const scenario = scenarioEngine.getScenario(targetScenarioId);
     
     // We don't send the raw commandMap back to the frontend in a real app,

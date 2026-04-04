@@ -2,24 +2,16 @@ const client = require('../hydradb');
 
 const RUBRICS = [
   {
-    id: "nginx_502",
-    text: "Scenario: nginx 502 Bad Gateway. Ideal solution path: (1) curl localhost to confirm 502 symptoms, (2) cat nginx config to read upstream block, (3) nginx -t to validate config syntax, (4) systemctl status app to check backend service, (5) journalctl -u app to find root cause error, (6) fix the root cause (missing env var MONGODB_URI), (7) systemctl restart app, (8) nginx -t again to confirm, (9) curl localhost to verify fix. Maximum time: 15 minutes. Red flags: restarting services without checking journalctl, running nginx -t after restart not before, brute-force trial and error without reading logs, not verifying fix with curl."
+    id: "prod_api_outage",
+    text: "Scenario: Production API Outage. Available Resources: Service, Database, Logs, Config. Ideal solution path: (1) Gain access to environment, (2) Investigation commands: cat /var/log/app.log, curl http://localhost:8080/api/orders, env, ps aux, netstat -tulnp, cat .env. (3) Identify DB_HOST=localhost as root cause (PostgreSQL is external). (4) Identify database not listening on 5432 locally. Success on identifying the .env misconfiguration. Red flags: debugging application code instead of investigating database host configuration."
   },
   {
-    id: "disk_full",
-    text: "Scenario: Disk full at 100%. Ideal path: (1) df -h to confirm disk usage, (2) du -sh /* to find largest directory, (3) du -sh /var/* to narrow down, (4) ls -lh /var/log/app/ to identify large log files, (5) tail the log to check if it is safe to truncate, (6) truncate -s 0 /var/log/app/app.log to free space, (7) df -h to confirm space freed. Bonus: set up logrotate config. Red flags: deleting files without checking contents, using rm on system files, not verifying with df after fix."
+    id: "slow_api_endpoint",
+    text: "Scenario: Performance Bottleneck (Slow API Endpoint). Available Resources: Java Spring Boot API, logs/performance.log, logs/db.log. Ideal path: (1) measure latency with curl -w '%{time_total}', (2) inspect performance.log to confirm latency, (3) examine db.log to identify N+1 query issue (repeated SELECTs for products/reviews), (4) use top to confirm low CPU/Normal memory usage. Success on identification of database query bottleneck. Red flags: assuming high CPU load without checking top, missing the N+1 pattern in database logs."
   },
   {
-    id: "service_down",
-    text: "Scenario: systemd service fails to start. Ideal path: (1) systemctl start api to observe failure, (2) journalctl -u api -n 50 immediately to read error, (3) identify EnvironmentFile missing, (4) ls /etc/api/ to find env.example, (5) cat /etc/api/env.example to read required vars, (6) cp env.example to env, (7) systemctl start api to verify fix, (8) curl the service endpoint. Red flags: multiple restart attempts without reading journalctl, not checking what variables are required before copying the file."
-  },
-  {
-    id: "permission_denied",
-    text: "Scenario: Application cannot write to /var/data/uploads/. Ideal path: (1) check application error log for 'permission denied', (2) ls -la /var/data/ to see ownership, (3) id to check current user, (4) ps aux | grep app to see what user the process runs as, (5) chown app_user:app_user /var/data/uploads/ to fix ownership, (6) chmod 755 /var/data/uploads/ if permissions are wrong, (7) systemctl restart app, (8) verify with a test write. Red flags: chmod 777, not checking what user the process runs as before chown."
-  },
-  {
-    id: "high_cpu",
-    text: "Scenario: Server at 99% CPU, app responding slowly. Ideal path: (1) top or htop to identify offending process, (2) ps aux --sort=-%cpu to confirm, (3) strace or lsof to inspect what the process is doing, (4) check app logs for infinite loop patterns or runaway cron job, (5) identify the specific cause (runaway cron job running every second), (6) crontab -l to view cron entries, (7) crontab -e to fix the schedule, (8) kill the rogue process, (9) verify CPU normalizes with top. Red flags: kill -9 without diagnosing, restarting app without identifying root cause."
+    id: "auth_vulnerability",
+    text: "Scenario: Security Incident (IDOR). Available Resources: REST API with JWT auth, logs/access.log, logs/auth.log. Ideal path: (1) inspect access logs to see unauthorized access patterns to /api/user/, (2) check auth logs to confirm single user authentication, (3) test API manually using curl and the same valid token against multiple user IDs (101, 102). (4) Confirm IDOR by seeing Bob's data (102) with Alice's token. Success on identifying IDOR missing ownership validation. Red flags: assuming token forgery or network security failure instead of broken object level authorization."
   }
 ];
 
@@ -126,13 +118,15 @@ async function recallScenarioRubric(scenarioId) {
     });
     
     if (!result.chunks || result.chunks.length === 0) {
-      return "";
+      throw new Error("No chunks");
     }
     
     return result.chunks.map(chunk => chunk.chunk_content || chunk.content).join('\n\n---\n\n');
   } catch (err) {
-    if (err.status === 404) return "";
-    throw err;
+    console.warn(`HydraDB fullRecall failed for scenario ${scenarioId}, falling back to local RUBRICS.`, err.message);
+    const staticRubric = RUBRICS.find(r => r.id === scenarioId);
+    if (staticRubric) return staticRubric.text;
+    return "";
   }
 }
 

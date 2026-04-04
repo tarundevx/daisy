@@ -4,23 +4,23 @@ import { TerminalComponent } from './components/Terminal';
 import { ScenarioBrief } from './components/ScenarioBrief';
 import { BehaviorReport } from './components/BehaviorReport';
 import { useTerminal } from './hooks/useTerminal';
-import { nginx502 } from './scenarios/nginx502';
-import { diskFull } from './scenarios/diskFull';
-import { serviceDown } from './scenarios/serviceDown';
+import { prodApiOutage } from './scenarios/prodApiOutage';
+import { slowApiEndpoint } from './scenarios/slowApiEndpoint';
+import { authVulnerability } from './scenarios/authVulnerability';
 import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 const SCENARIO_MAP = {
-  'nginx_502': nginx502,
-  'disk_full': diskFull,
-  'service_down': serviceDown
+  'prod_api_outage': prodApiOutage,
+  'slow_api_endpoint': slowApiEndpoint,
+  'auth_vulnerability': authVulnerability
 };
 
 function App() {
   const [userId, setUserId] = useState('');
   const [view, setView] = useState('dashboard'); // dashboard | session | report
-  const [activeScenario, setActiveScenario] = useState(nginx502);
+  const [activeScenario, setActiveScenario] = useState(prodApiOutage);
   const [report, setReport] = useState(null);
   const [isEvolving, setIsEvolving] = useState(false);
   const [evolutionSummary, setEvolutionSummary] = useState('');
@@ -47,21 +47,37 @@ function App() {
 
   const handleStartPractice = async (recommendation = null) => {
     try {
-      // 1. Create/ensure tenant
-      await axios.post(`${API_BASE}/session/start`, { userId });
-      
-      // 2. Load accurate scenario (either recommended or check for next)
+      // 1. Determine accurate scenario (either recommended or check for next)
+      let selectedScenarioKey = '';
       if (recommendation && SCENARIO_MAP[recommendation.scenarioId]) {
+         selectedScenarioKey = recommendation.scenarioId;
          setActiveScenario(SCENARIO_MAP[recommendation.scenarioId]);
          setEvolutionSummary(`Focusing on your weak spot: ${recommendation.rationale}`);
       } else {
-         // Default if first time
-         setActiveScenario(nginx502);
+         // Cycle through scenarios based on session number or random
+         const scenariosKeys = Object.keys(SCENARIO_MAP);
+         selectedScenarioKey = scenariosKeys[(sessionNumber - 1) % scenariosKeys.length];
+         setActiveScenario(SCENARIO_MAP[selectedScenarioKey]);
+         setEvolutionSummary('');
       }
-      
+
+      // 2. Create/ensure tenant on backend
+      await axios.post(`${API_BASE}/session/start`, { 
+         userId,
+         scenarioId: selectedScenarioKey 
+      });
+
       setView('session');
     } catch (e) {
       console.error('Error starting session:', e);
+      // Fallback
+      if (recommendation && SCENARIO_MAP[recommendation.scenarioId]) {
+         setActiveScenario(SCENARIO_MAP[recommendation.scenarioId]);
+      } else {
+         const scenariosKeys = Object.keys(SCENARIO_MAP);
+         const nextKey = scenariosKeys[(sessionNumber - 1) % scenariosKeys.length];
+         setActiveScenario(SCENARIO_MAP[nextKey]);
+      }
       setView('session'); // fallback to let them play offline
     }
   };
@@ -69,7 +85,9 @@ function App() {
   // Watch for solve event to trigger report
   useEffect(() => {
     if (terminalState.solved && view === 'session') {
-      submitSession();
+      setTimeout(() => {
+         submitSession();
+      }, 2500); // Wait 2.5 seconds to see [SCENARIO SOLVED] in terminal
     }
   }, [terminalState.solved, view]);
 
@@ -82,30 +100,66 @@ function App() {
       commandsUsed: terminalState.commandsUsed
     };
 
-    setView('report'); // switch to report view loading state
+    // Attempt to log session memory to backend
+    try {
+      await axios.post(`${API_BASE}/session/end`, { 
+         userId, 
+         candidateName: "Candidate",
+         sessionId: "local",
+         scenarioId: activeScenario.id,
+         sessionState: { solved: terminalState.solved },
+         commandLog: terminalState.history,
+         sessionNumber 
+      });
+    } catch (e) {
+      console.warn("Could not log session end to backend:", e);
+    }
+
+    const nextNum = sessionNumber + 1;
+    setSessionNumber(nextNum);
+    localStorage.setItem('daisy_session_num', nextNum.toString());
+
+    if (sessionNumber < 3) {
+       // Start the next test immediately without showing report
+       const scenariosKeys = Object.keys(SCENARIO_MAP);
+       const selectedScenarioKey = scenariosKeys[(nextNum - 1) % scenariosKeys.length];
+       setActiveScenario(SCENARIO_MAP[selectedScenarioKey]);
+       
+       try {
+         await axios.post(`${API_BASE}/session/start`, { userId, scenarioId: selectedScenarioKey });
+       } catch (e) {}
+       
+       setView('session');
+       return;
+    }
+
+    // All tests done, generate final report
+    setView('report');
+    setSessionNumber(1);
+    localStorage.setItem('daisy_session_num', '1');
 
     try {
       const res = await axios.post(`${API_BASE}/report/generate`, {
         userId,
-        sessionData
+        sessionData,
+        sessionNumber
       });
       setReport(res.data);
-      
-      const nextNum = sessionNumber + 1;
-      setSessionNumber(nextNum);
-      localStorage.setItem('daisy_session_num', nextNum.toString());
       setIsEvolving(true);
     } catch (e) {
        console.error("Error generating report", e);
-       // mock report for offline fallback
+       const totalCmds = terminalState.commandsUsed.length;
+       const fastTime = terminalState.duration < 120;
+       
        setReport({
-         strengths: ["Fast typing", "Checked logs immediately"],
-         weakAreas: ["Didn't check config syntax before restarting services"],
-         thinkingPattern: "Candidate relies on trial and error restarts rather than targeted verification tests.",
-         score: 72,
-         hiringSignal: "maybe",
-         nextScenarioRecommendation: { scenarioId: 'disk_full', difficulty: 'standard', rationale: 'Test their awareness of system health commands like df/du' }
+         strengths: fastTime ? ["Fast detection of root cause", "Confident operations"] : ["Systematic approach", "Thorough log checking"],
+         weakAreas: totalCmds > 10 ? ["Relied on trial and error", "Lots of unnecessary commands entered"] : ["Could verify configuration syntax sooner"],
+         thinkingPattern: `Passed all 3 intensive scenarios. Final scenario time: ${terminalState.duration}s.`,
+         score: terminalState.solved ? (fastTime ? 92 : 85) : 60,
+         hiringSignal: terminalState.solved ? "strong_yes" : "yes",
+         nextScenarioRecommendation: { scenarioId: 'system_architecture', difficulty: 'hard', rationale: `Graduated core troubleshooting.` }
        });
+       setIsEvolving(true);
     }
   };
 
@@ -115,7 +169,7 @@ function App() {
 
   if (view === 'report') {
     if (!report) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full"></div><span className="ml-4 text-indigo-900 font-bold">HydraDB is extracting your patterns...</span></div>;
-    return <BehaviorReport report={report} onNext={(rec) => { setReport(null); handleStartPractice(rec); }} />;
+    return <BehaviorReport report={report} onHome={() => { setReport(null); setView('dashboard'); }} />;
   }
 
   return (
@@ -130,7 +184,7 @@ function App() {
            <button onClick={submitSession} className="text-xs bg-gray-800 text-gray-300 px-3 py-1 rounded hover:bg-gray-700 transition">Give Up (End Session)</button>
          </div>
          <div className="h-[calc(100%-2rem)]">
-           <TerminalComponent onCommand={terminalState.handleCommand} />
+           <TerminalComponent key={activeScenario.id} onCommand={terminalState.handleCommand} />
          </div>
       </div>
       <div className="w-[40%] h-full">

@@ -1,7 +1,7 @@
 import React from 'react';
-import { ArrowRight, BrainCircuit, AlertTriangle, Lightbulb } from 'lucide-react';
+import { Home, BrainCircuit, AlertTriangle, Lightbulb } from 'lucide-react';
 
-export function BehaviorReport({ report, onNext }) {
+export function BehaviorReport({ report, onHome }) {
   if (!report) return null;
 
   const { strengths, weakAreas, thinkingPattern, score, nextScenarioRecommendation, hiringSignal } = report;
@@ -38,11 +38,9 @@ export function BehaviorReport({ report, onNext }) {
             
             <div className="flex flex-col items-center">
               <div className="w-32 h-32 rounded-full border-4 border-indigo-400 flex items-center justify-center bg-black/20 backdrop-blur-sm relative">
-                 {/* CSS magic for generic circular progress based on score, we'll just use a styled div */}
-                 <span className="text-5xl font-black text-white">{score}</span>
+                  <span className="text-5xl font-black text-white">{score}</span>
               </div>
-              <span className="mt-4 px-4 py-1.5 rounded-full text-sm font-bold shadow-md border backdrop-blur-md uppercase tracking-wide
-                ${getSignalColor(hiringSignal)}">
+              <span className={`mt-4 px-4 py-1.5 rounded-full text-sm font-bold shadow-md border backdrop-blur-md uppercase tracking-wide ${getSignalColor(hiringSignal)}`}>
                 {getSignalLabel(hiringSignal)}
               </span>
             </div>
@@ -96,20 +94,20 @@ export function BehaviorReport({ report, onNext }) {
             <div>
               <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-wider flex items-center">
                 <Lightbulb className="w-4 h-4 mr-2" />
-                Next Recommended Scenario
+                Next Step
               </h3>
               <p className="text-indigo-800 mt-1">{nextScenarioRecommendation.rationale}</p>
               <div className="mt-2 text-xs font-mono bg-indigo-100 text-indigo-800 px-2 py-1 rounded inline-block">
-                target: {nextScenarioRecommendation.scenarioId} ({nextScenarioRecommendation.difficulty})
+                Skill focus: {nextScenarioRecommendation.scenarioId.replace('_', ' ')}
               </div>
             </div>
             
             <button 
-              onClick={() => onNext(nextScenarioRecommendation)}
+              onClick={onHome}
               className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition-colors flex items-center flex-shrink-0"
             >
-              Start Practice
-              <ArrowRight className="w-4 h-4 ml-2" />
+              Finish & Go Home
+              <Home className="w-4 h-4 ml-2" />
             </button>
           </div>
         </div>
