@@ -1,7 +1,9 @@
 import React from 'react';
-import { Play, TrendingUp, Clock, Activity } from 'lucide-react';
+import { Play, Code2, Activity } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export function Dashboard({ onStart, isEvolving, evolutionSummary }) {
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8 font-sans">
@@ -25,14 +27,26 @@ export function Dashboard({ onStart, isEvolving, evolutionSummary }) {
           </div>
         )}
 
-        <div className="flex justify-center mt-12">
+        <div className="flex flex-col sm:flex-row gap-6 justify-center mt-12 px-4">
             <button 
               onClick={() => onStart()}
-              className="px-10 py-5 bg-gradient-to-r from-gray-900 to-black hover:from-black hover:to-gray-900 text-white text-xl font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 flex items-center justify-center"
+              className="flex-1 max-w-xs px-8 py-6 bg-gradient-to-r from-gray-900 to-black hover:from-black hover:to-gray-900 text-white text-xl font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 flex items-center justify-center group"
             >
-              <Play className="w-8 h-8 mr-3 fill-current" />
-              Start Practice Session
+              <Play className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" />
+              Scenario Sandbox
             </button>
+
+            <button 
+              onClick={() => navigate('/code')}
+              className="flex-1 max-w-xs px-8 py-6 bg-white border-2 border-gray-900 text-gray-900 hover:bg-gray-50 text-xl font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 flex items-center justify-center group"
+            >
+              <Code2 className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform text-indigo-600" />
+              Code Sandbox
+            </button>
+        </div>
+
+        <div className="mt-16 text-center">
+          <p className="text-xs text-gray-400 font-mono uppercase tracking-widest">Powered by Gemini 1.5 Flash & HydraDB</p>
         </div>
 
       </div>
