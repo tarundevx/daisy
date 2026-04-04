@@ -7,6 +7,8 @@ import { useTerminal } from './hooks/useTerminal';
 import { prodApiOutage } from './scenarios/prodApiOutage';
 import { slowApiEndpoint } from './scenarios/slowApiEndpoint';
 import { authVulnerability } from './scenarios/authVulnerability';
+import { CodeAssessment } from './pages/CodeAssessment';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
@@ -17,7 +19,7 @@ const SCENARIO_MAP = {
   'auth_vulnerability': authVulnerability
 };
 
-function App() {
+function ExistingAppFlow() {
   const [userId, setUserId] = useState('');
   const [view, setView] = useState('dashboard'); // dashboard | session | report
   const [activeScenario, setActiveScenario] = useState(prodApiOutage);
@@ -196,6 +198,17 @@ function App() {
          />
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/*" element={<ExistingAppFlow />} />
+        <Route path="/code" element={<CodeAssessment />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
