@@ -1,0 +1,30 @@
+module.exports = {
+  id: "disk_full",
+  title: "Disk Full — Writes Failing",
+  difficulty: "standard",
+  timeLimit: 900,
+  brief: "ALERT: Application throwing 'ENOSPC: no space left on device' errors. New uploads are failing. Database writes are failing intermittently. The on-call engineer is you. Diagnose and recover the disk space without deleting critical data. Logged in as deploy user on prod-02.",
+  successCommand: "df -h",
+  commandMap: {
+    "df": "Filesystem     1K-blocks     Used Available Use% Mounted on\n/dev/sda1       52428800 52428800         0  100% /\ntmpfs            4096000   131072   3964928   4% /dev/shm",
+    "du -sh /*": "0        /bin\n0        /boot\n0        /dev\n4.0K     /etc\n12K      /home\n0        /lib\n0        /lib64\n0        /media\n0        /mnt\n0        /opt\n0        /proc\n0        /root\n0        /run\n4.0K     /srv\n0        /sys\n16K      /tmp\n4.4G     /usr\n43G      /var",
+    "du -sh /var/*": "8.0K     /var/backups\n4.0K     /var/cache\n4.0K     /var/lib\n8.0K     /var/local\n0        /var/lock\n42G      /var/log\n4.0K     /var/mail\n4.0K     /var/opt\n0        /var/run\n8.0K     /var/spool\n4.0K     /var/tmp",
+    "du -sh /var/log/*": "4.0K     /var/log/apt\n8.0K     /var/log/auth.log\n4.0K     /var/log/dpkg.log\n4.0K     /var/log/kern.log\n41G      /var/log/app\n4.0K     /var/log/nginx\n4.0K     /var/log/syslog",
+    "du -sh /var/log/app/*": "40G      /var/log/app/app.log\n512M     /var/log/app/app.log.1\n256M     /var/log/app/app.log.2\n128M     /var/log/app/app.log.3\n64M      /var/log/app/app.log.4",
+    "ls -lh /var/log/app/": "total 41G\n-rw-r--r-- 1 app app  40G Jan 15 11:41 app.log\n-rw-r--r-- 1 app app 512M Jan 14 00:00 app.log.1\n-rw-r--r-- 1 app app 256M Jan 13 00:00 app.log.2\n-rw-r--r-- 1 app app 128M Jan 12 00:00 app.log.3\n-rw-r--r-- 1 app app  64M Jan 11 00:00 app.log.4",
+    "ls /var/log/app/": "app.log  app.log.1  app.log.2  app.log.3  app.log.4",
+    "tail /var/log/app/app.log": "2024-01-15T11:41:55.123Z [INFO] GET /api/products 200 45ms\n2024-01-15T11:41:55.891Z [INFO] GET /api/users/profile 200 23ms\n2024-01-15T11:41:56.234Z [INFO] POST /api/upload 500 12ms - ENOSPC: no space left on device\n2024-01-15T11:41:56.891Z [INFO] GET /api/products 200 44ms\n2024-01-15T11:41:57.123Z [INFO] POST /api/upload 500 8ms - ENOSPC: no space left on device\n2024-01-15T11:41:57.456Z [INFO] GET /health 200 2ms",
+    "tail -n 100 /var/log/app/app.log": "2024-01-15T11:41:56.234Z [INFO] POST /api/upload 500 12ms - ENOSPC: no space left on device\n2024-01-15T11:41:56.891Z [INFO] GET /api/products 200 44ms\n2024-01-15T11:41:57.123Z [INFO] POST /api/upload 500 8ms - ENOSPC: no space left on device",
+    "head /var/log/app/app.log": "2024-01-09T00:00:01.000Z [INFO] Server started on port 3001\n2024-01-09T00:00:02.123Z [INFO] Database connected\n2024-01-09T00:00:02.456Z [INFO] GET /health 200 1ms\n...",
+    "wc -l /var/log/app/app.log": "847392810 /var/log/app/app.log",
+    "cat /var/log/app/app.log": "cat: /var/log/app/app.log: file too large — use tail or head to inspect",
+    "truncate -s 0 /var/log/app/app.log": "",
+    "rm /var/log/app/app.log": "rm: cannot remove '/var/log/app/app.log': file is in use by running process 9234 (node). Use truncate -s 0 instead to clear without removing.",
+    "rm /var/log/app/app.log.1": "",
+    "> /var/log/app/app.log": "bash: permission denied: /var/log/app/app.log",
+    "cat /etc/logrotate.d/app": "cat: /etc/logrotate.d/app: No such file or directory",
+    "ls /etc/logrotate.d/": "apt  dpkg  nginx  rsyslog  ufw",
+    "cat /etc/logrotate.conf": "# see man logrotate for details\nweekly\nrotate 4\ncreate\ncompressed\ninclude /etc/logrotate.d",
+    "systemctl status app": "● app.service - Node.js Application Server\n   Active: active (running) since Mon 2024-01-15 09:00:00 UTC; 2h 41min ago\n Main PID: 9234 (node)"
+  }
+};
