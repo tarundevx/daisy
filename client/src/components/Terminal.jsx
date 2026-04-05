@@ -21,8 +21,8 @@ export function TerminalComponent({ onCommand }) {
     const xterm = new Terminal({
       cursorBlink: true,
       theme: { 
-        background: '#ffffff', 
-        foreground: '#111827',
+        background: '#0a192f', 
+        foreground: '#e5e7eb',
         cursor: '#0072e3',
         selectionBackground: '#0072e333'
       },

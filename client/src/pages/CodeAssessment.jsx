@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Editor from '@monaco-editor/react';
-import { Play, Terminal as TerminalIcon, CheckCircle2, XCircle, Loader2, Send, FileCode, Info } from 'lucide-react';
+import { Play, Terminal as TerminalIcon, CheckCircle2, XCircle, Loader2, Send, FileCode, Info, Activity, Shield } from 'lucide-react';
 import { bootWebContainer, mountProject, runTests } from '../services/webcontainerService';
 import { rateLimiterScenarioFiles } from '../scenarios/rateLimiterScenario';
 import { Terminal } from 'xterm';
@@ -51,8 +51,8 @@ export function CodeAssessment() {
           const fitAddon = new FitAddon();
           const term = new Terminal({
             theme: { 
-              background: '#ffffff',
-              foreground: '#111827',
+              background: '#0a192f',
+              foreground: '#e5e7eb',
               cursor: '#0072e3',
               selectionBackground: '#0072e333'
             },
@@ -157,6 +157,17 @@ export function CodeAssessment() {
   };
 
   const isEditable = activeFile === 'middleware.js';
+
+  const handleEditorWillMount = (monaco) => {
+    monaco.editor.defineTheme('custom-dark-blue', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [],
+      colors: {
+        'editor.background': '#0a192f',
+      }
+    });
+  };
 
   return (
     <div className="h-screen w-screen flex flex-col bg-tally-bg text-tally-text-primary font-sans overflow-hidden">
@@ -266,7 +277,7 @@ export function CodeAssessment() {
                   )}
                 </div>
                 
-                <div className="bg-white border border-tally-border rounded-tally-lg overflow-hidden mb-8">
+                <div className="bg-[#0a192f] border border-tally-border rounded-tally-lg overflow-hidden mb-8">
                   <div ref={terminalRef} className="h-48 w-full p-4"></div>
                 </div>
 
@@ -332,12 +343,13 @@ export function CodeAssessment() {
               </button>
             ))}
           </div>
-          <div className="flex-1 relative bg-white">
+          <div className="flex-1 relative bg-[#0a192f]">
             <Editor
               height="100%"
               path={activeFile}
               language="javascript"
-              theme="vs"
+              theme="custom-dark-blue"
+              beforeMount={handleEditorWillMount}
               defaultValue={files[activeFile].file.contents}
               onChange={handleEditorChange}
               options={{
