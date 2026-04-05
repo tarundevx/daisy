@@ -10,7 +10,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal as TerminalIcon, Sparkles, Send, ArrowRight, ShieldCheck } from 'lucide-react';
 
 const SCENARIO_MAP = {
   'prod_api_outage': prodApiOutage,
@@ -128,41 +127,38 @@ export default function InterviewSession() {
   return (
     <div className="h-screen w-screen flex bg-tally-bg overflow-hidden font-sans">
       <div className="w-[62%] h-full p-10 flex flex-col relative">
-         <header className="flex justify-between items-center mb-8">
+         <header className="flex justify-between items-center mb-8 px-2">
            <motion.div 
              initial={{ opacity: 0, x: -20 }}
              animate={{ opacity: 1, x: 0 }}
-             className="flex items-center gap-3"
+             className="flex items-center gap-6"
            >
-             <div className="p-2 bg-tally-blue text-white rounded-tally-lg">
-               <TerminalIcon className="w-5 h-5" />
-             </div>
-             <div>
-               <h2 className="text-xl font-bold text-tally-text-primary tracking-tight leading-none mb-1">Live Terminal</h2>
-               <div className="text-[10px] text-tally-text-secondary/60 font-bold uppercase tracking-widest">
-                 Session UUID: {sessionId?.substring(0, 8)}...
+             <div className="flex flex-col">
+               <h2 className="text-2xl font-black text-tally-text-primary tracking-tighter leading-none mb-1 italic">Live Terminal</h2>
+               <div className="text-[10px] text-tally-text-secondary opacity-60 font-black uppercase tracking-[0.2em]">
+                 Trace: {sessionId?.substring(0, 8)}
                </div>
              </div>
            </motion.div>
            
-           <div className="flex gap-2">
-             <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
-             <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
-             <div className="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+           <div className="flex gap-3">
+             <div className="w-2 h-2 rounded-full bg-tally-pink/20"></div>
+             <div className="w-2 h-2 rounded-full bg-tally-blue/20"></div>
+             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
            </div>
          </header>
 
           <motion.div 
              initial={{ opacity: 0, y: 10 }}
              animate={{ opacity: 1, y: 0 }}
-             className="flex-1 bg-white border border-tally-border rounded-tally-xl shadow-sm overflow-hidden p-6 relative"
+             className="flex-1 bg-white border border-tally-border rounded-tally-xl shadow-sm overflow-hidden p-8 relative"
           >
             {activeScenario ? (
                <TerminalComponent key={activeScenario.id} onCommand={terminalState.handleCommand} />
             ) : (
                <div className="h-full w-full flex flex-col items-center justify-center bg-[#0a192f] rounded-lg">
-                 <div className="w-12 h-12 border-4 border-tally-blue border-t-transparent rounded-full animate-spin mb-4"></div>
-                 <div className="text-tally-blue font-bold tracking-widest text-[10px] uppercase animate-pulse">Initializing Neural Sandbox...</div>
+                 <div className="w-10 h-10 border-4 border-tally-blue border-t-transparent rounded-full animate-spin mb-6"></div>
+                 <div className="text-tally-blue font-black tracking-[0.3em] text-[9px] uppercase animate-pulse">Configuring Sandbox Environment</div>
                </div>
             )}
           </motion.div>
@@ -173,30 +169,28 @@ export default function InterviewSession() {
                initial={{ opacity: 0 }}
                animate={{ opacity: 1 }}
                exit={{ opacity: 0 }}
-               className="fixed inset-0 bg-white/60 backdrop-blur-md flex items-center justify-center p-12 z-50"
+               className="fixed inset-0 bg-white/80 backdrop-blur-xl flex items-center justify-center p-12 z-50"
              >
                <motion.div 
                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
                  animate={{ opacity: 1, scale: 1, y: 0 }}
                  exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                 className="max-w-2xl w-full bg-white border border-tally-border p-12 rounded-tally-xl shadow-2xl relative overflow-hidden"
+                 className="max-w-2xl w-full bg-white border border-tally-border p-16 rounded-tally-xl shadow-2xl relative overflow-hidden"
                >
-                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-tally-blue to-tally-pink"></div>
+                 <div className="absolute top-0 left-0 w-full h-1.5 bg-tally-blue"></div>
                  
-                 <div className="flex items-center gap-3 mb-8">
-                   <div className="p-2.5 bg-tally-blue/10 text-tally-blue rounded-full">
-                     <Sparkles className="w-6 h-6" />
-                   </div>
-                   <h3 className="text-3xl font-bold text-tally-text-primary tracking-tight">Contextual Verification</h3>
+                 <div className="mb-12">
+                   <div className="text-[10px] font-black text-tally-blue uppercase tracking-[0.4em] mb-4 italic">CRITICAL ANALYSIS</div>
+                   <h3 className="text-5xl font-black text-tally-text-primary tracking-tighter italic">Verification</h3>
                  </div>
 
-                 <p className="text-xl text-tally-text-primary mb-10 leading-relaxed font-medium italic">
-                    "{followUpQuestion || 'Analyzing your performance and technical decisions...'}"
+                 <p className="text-2xl text-tally-text-primary mb-12 leading-tight font-medium tracking-tight">
+                    "{followUpQuestion || 'Analyzing your recent performance and technical decisions...'}"
                  </p>
 
-                 <div className="relative mb-10">
+                 <div className="relative mb-12">
                    <textarea
-                     className="w-full bg-tally-bg border border-tally-border rounded-tally-lg p-6 text-tally-text-primary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-tally-blue/20 transition-all min-h-[160px] font-medium"
+                     className="w-full bg-tally-bg border border-tally-border rounded-tally-lg p-8 text-tally-text-primary placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-tally-blue/20 transition-all min-h-[180px] font-bold text-lg"
                      placeholder="State your technical justification..."
                      value={followUpAnswer}
                      onChange={(e) => setFollowUpAnswer(e.target.value)}
@@ -208,15 +202,12 @@ export default function InterviewSession() {
                    whileTap={{ scale: 0.99 }}
                    onClick={submitFollowUp}
                    disabled={!followUpAnswer || isFinishing}
-                   className="w-full bg-tally-blue hover:bg-blue-600 text-white font-bold py-5 rounded-full transition-all shadow-lg shadow-tally-blue/10 flex items-center justify-center gap-3 disabled:opacity-50"
+                   className="w-full bg-tally-blue hover:bg-black text-white font-black py-6 rounded-full transition-all shadow-xl shadow-tally-blue/20 flex items-center justify-center uppercase tracking-[0.3em] text-[10px] disabled:opacity-50"
                  >
                    {isFinishing ? (
-                     <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                     'Finalizing Records...'
                    ) : (
-                     <>
-                        <span className="text-lg">Submit & Continue</span>
-                        <ArrowRight className="w-5 h-5" />
-                     </>
+                     'Commit Evaluation & Continue'
                    )}
                  </motion.button>
                </motion.div>
@@ -225,7 +216,7 @@ export default function InterviewSession() {
          </AnimatePresence>
       </div>
 
-      <div className="w-[38%] h-full bg-tally-surface border-l border-tally-border shadow-[-10px_0_30px_rgba(0,0,0,0.02)] relative z-10">
+      <div className="w-[38%] h-full bg-tally-surface border-l border-tally-border shadow-[-20px_0_40px_rgba(0,0,0,0.02)] relative z-10">
           {activeScenario ? (
             <ScenarioBrief 
                 scenario={activeScenario} 
@@ -234,12 +225,12 @@ export default function InterviewSession() {
                 commandsUsed={terminalState.commandsUsed}
             />
           ) : (
-            <div className="p-10 flex flex-col items-center justify-center h-full text-center">
-               <div className="p-4 bg-tally-bg rounded-tally-xl border border-tally-border mb-6">
-                 <Sparkles className="w-8 h-8 text-tally-blue animate-pulse" />
+            <div className="p-16 flex flex-col items-center justify-center h-full text-center">
+               <div className="w-12 h-12 bg-tally-bg rounded-tally-xl border border-tally-border mb-8 flex items-center justify-center">
+                 <div className="w-2 h-2 bg-tally-blue rounded-full animate-ping"></div>
                </div>
-               <h3 className="text-xl font-bold text-tally-text-primary mb-2">Preparing Scenario</h3>
-               <p className="text-sm text-tally-text-secondary leading-relaxed">Configuring the virtual environment for the next evaluation phase.</p>
+               <h3 className="text-2xl font-black text-tally-text-primary mb-4 tracking-tighter italic">Preparing Sandbox</h3>
+               <p className="text-[11px] text-tally-text-secondary font-black uppercase tracking-[0.2em] opacity-60">Synchronizing evaluator parameters</p>
             </div>
           )}
       </div>

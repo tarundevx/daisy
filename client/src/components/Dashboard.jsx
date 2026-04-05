@@ -1,52 +1,60 @@
 import React from 'react';
-import { Play, Code2, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function Dashboard({ onStart, isEvolving, evolutionSummary }) {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8 font-sans">
-      <div className="max-w-3xl w-full">
+    <div className="min-h-screen bg-tally-bg flex flex-col items-center justify-center p-12 font-sans overflow-hidden">
+      <div className="max-w-4xl w-full">
         
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 mb-4 tracking-tight">Daisy</h1>
-          <p className="text-xl text-gray-600 font-medium">HydraDB Contextual Interview Simulator</p>
-          <p className="text-sm text-gray-500 mt-2 max-w-2xl mx-auto">
-            Leetcode tests what you memorized. Daisy tests how you think — and gets smarter every time you practice.
+        <div className="text-center mb-20 relative">
+          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-40 h-40 bg-tally-blue/5 rounded-full blur-3xl"></div>
+          <h1 className="text-9xl font-black text-tally-text-primary mb-6 tracking-tighter italic leading-none">
+            Daisy
+          </h1>
+          <p className="text-3xl text-tally-text-secondary font-medium tracking-tight mb-4">
+            HydraDB Contextual Interview Simulator
+          </p>
+          <div className="h-1.5 w-24 bg-tally-blue mx-auto mb-10"></div>
+          <p className="text-sm text-tally-text-secondary font-black uppercase tracking-[0.3em] max-w-2xl mx-auto opacity-60 leading-relaxed">
+            Neural evaluation for the next generation of architects.
           </p>
         </div>
 
         {isEvolving && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-indigo-100 rounded-xl p-6 mb-8 text-center shadow-sm">
-             <div className="flex justify-center mb-3">
-               <Activity className="w-8 h-8 text-indigo-500" />
-             </div>
-             <h3 className="text-lg font-bold text-indigo-900 mb-2">Your profile is evolving</h3>
-             <p className="text-indigo-800 text-sm italic">"{evolutionSummary || 'You have started establishing a baseline debugging pattern.'}"</p>
+          <div className="bg-tally-surface border border-tally-border rounded-tally-xl p-10 mb-12 text-center shadow-sm relative overflow-hidden group">
+             <div className="absolute top-0 left-0 w-full h-1.5 bg-tally-blue"></div>
+             <div className="text-[10px] font-black text-tally-blue uppercase tracking-[0.4em] mb-4 italic">Neural Evolution Trace</div>
+             <h3 className="text-3xl font-black text-tally-text-primary mb-4 tracking-tighter italic">Dynamic Profile Active</h3>
+             <p className="text-xl text-tally-text-secondary font-bold italic tracking-tight opacity-90 underline decoration-tally-blue/20 underline-offset-8">
+               "{evolutionSummary || 'You have started establishing a baseline debugging pattern.'}"
+             </p>
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-6 justify-center mt-12 px-4">
+        <div className="flex flex-col md:flex-row gap-10 justify-center mt-16 px-4">
             <button 
               onClick={() => onStart()}
-              className="flex-1 max-w-xs px-8 py-6 bg-gradient-to-r from-gray-900 to-black hover:from-black hover:to-gray-900 text-white text-xl font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 flex items-center justify-center group"
+              className="flex-1 max-w-md px-12 py-10 bg-white border-2 border-black hover:bg-black hover:text-white text-black transition-all shadow-2xl hover:shadow-tally-blue/10 flex flex-col items-start gap-6 group relative overflow-hidden"
             >
-              <Play className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" />
-              Scenario Sandbox
+              <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 group-hover:opacity-100 transition-opacity italic">Phase 01</div>
+              <div className="text-4xl font-black italic tracking-tighter uppercase">Scenario Hub</div>
+              <div className="h-1 w-12 bg-tally-pink"></div>
             </button>
 
             <button 
               onClick={() => navigate('/code')}
-              className="flex-1 max-w-xs px-8 py-6 bg-white border-2 border-gray-900 text-gray-900 hover:bg-gray-50 text-xl font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 flex items-center justify-center group"
+              className="flex-1 max-w-md px-12 py-10 bg-white border-2 border-black hover:bg-black hover:text-white text-black transition-all shadow-2xl hover:shadow-tally-pink/10 flex flex-col items-start gap-6 group relative overflow-hidden"
             >
-              <Code2 className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform text-indigo-600" />
-              Code Sandbox
+              <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 group-hover:opacity-100 transition-opacity italic">Phase 02</div>
+              <div className="text-4xl font-black italic tracking-tighter uppercase">Code Sandbox</div>
+              <div className="h-1 w-12 bg-tally-blue"></div>
             </button>
         </div>
 
-        <div className="mt-16 text-center">
-          <p className="text-xs text-gray-400 font-mono uppercase tracking-widest">Powered by Gemini 1.5 Flash & HydraDB</p>
+        <div className="mt-24 text-center">
+          <p className="text-[9px] text-tally-text-secondary font-black uppercase tracking-[0.4em] opacity-40">GEMINI NEURAL ENGINE & HYDRADB INFRASTRUCTURE</p>
         </div>
 
       </div>

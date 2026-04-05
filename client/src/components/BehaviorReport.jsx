@@ -1,5 +1,4 @@
 import React from 'react';
-import { Home, BrainCircuit, AlertTriangle, Lightbulb } from 'lucide-react';
 
 export function BehaviorReport({ report, onHome }) {
   if (!report) return null;
@@ -8,11 +7,11 @@ export function BehaviorReport({ report, onHome }) {
 
   const getSignalColor = (signal) => {
     switch(signal) {
-      case 'strong_yes': return 'bg-green-100 text-green-800 border-green-200';
-      case 'yes': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'maybe': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'no': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'strong_yes': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+      case 'yes': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+      case 'maybe': return 'bg-amber-50 text-amber-600 border-amber-100';
+      case 'no': return 'bg-rose-50 text-rose-600 border-rose-100';
+      default: return 'bg-gray-50 text-gray-400 border-gray-100';
     }
   };
 
@@ -21,68 +20,65 @@ export function BehaviorReport({ report, onHome }) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-8 font-sans">
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+    <div className="max-w-4xl mx-auto p-12 font-sans overflow-hidden">
+      <div className="bg-white rounded-tally-xl shadow-2xl overflow-hidden border border-tally-border relative">
+        <div className="absolute top-0 left-0 w-full h-2 bg-tally-blue"></div>
         
         {/* Header Section */}
-        <div className="bg-gradient-to-r from-slate-900 to-indigo-900 px-8 py-10 text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-8 opacity-20">
-            <BrainCircuit className="w-48 h-48" />
+        <div className="px-12 py-16 flex justify-between items-center bg-tally-surface border-b border-tally-border">
+          <div>
+            <div className="text-[10px] font-black text-tally-blue uppercase tracking-[0.4em] mb-4 italic">Neural Output</div>
+            <h1 className="text-6xl font-black text-tally-text-primary tracking-tighter leading-none italic">Analysis</h1>
           </div>
           
-          <div className="relative z-10 flex justify-between items-center">
-            <div>
-              <h1 className="text-4xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-indigo-100">Behavioral Output</h1>
-              <p className="text-indigo-200 text-lg">AI-Powered Debugging Analysis</p>
+          <div className="flex flex-col items-center">
+            <div className="w-40 h-40 rounded-full border-4 border-tally-blue flex flex-col items-center justify-center bg-white shadow-xl shadow-tally-blue/5">
+                <span className="text-[10px] font-black text-tally-text-secondary uppercase tracking-widest mb-1">Index</span>
+                <span className="text-6xl font-black text-tally-text-primary italic tracking-tighter">{score}</span>
             </div>
-            
-            <div className="flex flex-col items-center">
-              <div className="w-32 h-32 rounded-full border-4 border-indigo-400 flex items-center justify-center bg-black/20 backdrop-blur-sm relative">
-                  <span className="text-5xl font-black text-white">{score}</span>
-              </div>
-              <span className={`mt-4 px-4 py-1.5 rounded-full text-sm font-bold shadow-md border backdrop-blur-md uppercase tracking-wide ${getSignalColor(hiringSignal)}`}>
-                {getSignalLabel(hiringSignal)}
-              </span>
-            </div>
+            <span className={`mt-8 px-6 py-2 rounded-full text-[10px] font-black border uppercase tracking-[0.2em] shadow-sm ${getSignalColor(hiringSignal)}`}>
+              {getSignalLabel(hiringSignal)}
+            </span>
           </div>
         </div>
 
         {/* Content Section */}
-        <div className="p-8 space-y-8 bg-gray-50">
+        <div className="p-12 space-y-12 bg-white">
           
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-900 flex items-center mb-3">
-              <BrainCircuit className="w-5 h-5 mr-2 text-indigo-600" />
+          <div className="bg-tally-surface p-10 rounded-tally-xl border border-tally-border shadow-sm">
+            <h3 className="text-[10px] font-black text-tally-text-secondary uppercase tracking-[0.3em] mb-6 italic">
               Thinking Pattern
             </h3>
-            <p className="text-gray-700 leading-relaxed text-sm">{thinkingPattern}</p>
+            <p className="text-tally-text-primary leading-snug font-bold text-xl tracking-tight opacity-90 underline decoration-tally-blue/20 underline-offset-8">
+              "{thinkingPattern}"
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm border-t-4 border-t-green-500">
-              <h3 className="text-lg font-bold text-gray-900 flex items-center mb-4">
-                <CheckCircleIcon className="w-5 h-5 mr-2 text-green-500" />
-                Strengths
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="bg-white p-10 rounded-tally-xl border border-tally-border shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500"></div>
+              <h3 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] mb-8 italic">
+                Subject Strengths
               </h3>
-              <ul className="space-y-3">
+              <ul className="space-y-6">
                  {strengths.map((str, i) => (
-                   <li key={i} className="flex items-start text-sm text-gray-600">
-                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 mr-2 flex-shrink-0" />
+                   <li key={i} className="flex items-start text-sm text-tally-text-primary font-bold tracking-tight opacity-80 italic group-hover:not-italic transition-all">
+                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 mr-4 flex-shrink-0" />
                      {str}
                    </li>
                  ))}
               </ul>
             </div>
 
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm border-t-4 border-t-red-500">
-              <h3 className="text-lg font-bold text-gray-900 flex items-center mb-4">
-                <AlertTriangle className="w-5 h-5 mr-2 text-red-500" />
+            <div className="bg-white p-10 rounded-tally-xl border border-tally-border shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-tally-pink"></div>
+              <h3 className="text-[10px] font-black text-tally-pink uppercase tracking-[0.3em] mb-8 italic">
                 Growth Areas
               </h3>
-              <ul className="space-y-3">
+              <ul className="space-y-6">
                  {weakAreas.map((weak, i) => (
-                   <li key={i} className="flex items-start text-sm text-gray-600">
-                     <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 mr-2 flex-shrink-0" />
+                   <li key={i} className="flex items-start text-sm text-tally-text-primary font-bold tracking-tight opacity-80 italic group-hover:not-italic transition-all">
+                     <span className="w-1.5 h-1.5 rounded-full bg-tally-pink mt-2 mr-4 flex-shrink-0" />
                      {weak}
                    </li>
                  ))}
@@ -90,36 +86,28 @@ export function BehaviorReport({ report, onHome }) {
             </div>
           </div>
 
-          <div className="bg-indigo-50 p-6 rounded-xl border border-indigo-100 flex justify-between items-center">
-            <div>
-              <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-wider flex items-center">
-                <Lightbulb className="w-4 h-4 mr-2" />
-                Next Step
+          <div className="bg-tally-surface p-10 rounded-tally-xl border border-tally-border flex flex-col md:flex-row justify-between items-center gap-10">
+            <div className="flex-1">
+              <h3 className="text-[9px] font-black text-tally-blue uppercase tracking-[0.4em] mb-6 italic">
+                Evolutionary Path
               </h3>
-              <p className="text-indigo-800 mt-1">{nextScenarioRecommendation.rationale}</p>
-              <div className="mt-2 text-xs font-mono bg-indigo-100 text-indigo-800 px-2 py-1 rounded inline-block">
-                Skill focus: {nextScenarioRecommendation.scenarioId.replace('_', ' ')}
+              <p className="text-xl text-tally-text-primary font-bold leading-tight tracking-tight italic opacity-90">
+                {nextScenarioRecommendation.rationale}
+              </p>
+              <div className="mt-8 text-[9px] font-black bg-white border border-tally-border text-tally-blue px-4 py-2 rounded-full uppercase tracking-[0.3em] inline-block shadow-sm">
+                Focus: {nextScenarioRecommendation.scenarioId.replace('_', ' ')}
               </div>
             </div>
             
             <button 
               onClick={onHome}
-              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition-colors flex items-center flex-shrink-0"
+              className="px-10 py-5 bg-tally-blue hover:bg-black text-white font-black rounded-full shadow-2xl transition-all flex items-center flex-shrink-0 uppercase tracking-[0.4em] text-[10px] shadow-tally-blue/20 italic"
             >
-              Finish & Go Home
-              <Home className="w-4 h-4 ml-2" />
+              Commit & Export
             </button>
           </div>
         </div>
       </div>
     </div>
-  );
-}
-
-function CheckCircleIcon({className}) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
   );
 }

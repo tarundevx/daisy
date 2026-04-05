@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Login() {
@@ -95,11 +94,10 @@ export default function Login() {
                   exit={{ opacity: 0, x: 10 }}
                   className="relative"
                 >
-                  <User className="absolute left-4 top-4 text-tally-text-secondary w-5 h-5" />
                   <input
                     type="text"
                     placeholder="Full Name"
-                    className="w-full bg-tally-bg border border-tally-border rounded-tally-lg py-4 pl-12 pr-4 text-tally-text-primary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-tally-blue/20 transition-all font-medium"
+                    className="w-full bg-tally-bg border border-tally-border rounded-tally-lg py-4 px-6 text-tally-text-primary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-tally-blue/20 transition-all font-medium"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
@@ -109,11 +107,10 @@ export default function Login() {
             </AnimatePresence>
 
             <div className="relative">
-              <Mail className="absolute left-4 top-4 text-tally-text-secondary w-5 h-5" />
               <input
                 type="email"
                 placeholder="Email Address"
-                className="w-full bg-tally-bg border border-tally-border rounded-tally-lg py-4 pl-12 pr-4 text-tally-text-primary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-tally-blue/20 transition-all font-medium"
+                className="w-full bg-tally-bg border border-tally-border rounded-tally-lg py-4 px-6 text-tally-text-primary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-tally-blue/20 transition-all font-medium"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -121,11 +118,10 @@ export default function Login() {
             </div>
 
             <div className="relative">
-              <Lock className="absolute left-4 top-4 text-tally-text-secondary w-5 h-5" />
               <input
                 type="password"
                 placeholder="Password"
-                className="w-full bg-tally-bg border border-tally-border rounded-tally-lg py-4 pl-12 pr-4 text-tally-text-primary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-tally-blue/20 transition-all font-medium"
+                className="w-full bg-tally-bg border border-tally-border rounded-tally-lg py-4 px-6 text-tally-text-primary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-tally-blue/20 transition-all font-medium"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -142,10 +138,7 @@ export default function Login() {
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               ) : (
-                <>
-                  <span className="mr-2">{isLogin ? 'Sign In' : 'Create Account'}</span>
-                  <ArrowRight className="w-5 h-5" />
-                </>
+                <span className="uppercase tracking-widest text-xs font-black">{isLogin ? 'Sign In' : 'Create Account'}</span>
               )}
             </motion.button>
           </form>
