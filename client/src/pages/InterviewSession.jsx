@@ -9,8 +9,8 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { io } from 'socket.io-client';
-
-const socket = io(window.location.origin.replace('5173', '3000'));
+import { motion, AnimatePresence } from 'framer-motion';
+import { Terminal as TerminalIcon, Sparkles, Send, ArrowRight, ShieldCheck } from 'lucide-react';
 
 const SCENARIO_MAP = {
   'prod_api_outage': prodApiOutage,
@@ -55,17 +55,13 @@ export default function InterviewSession() {
 
   useEffect(() => {
     if (!sessionId || !user) return;
-    
     const socket = io(window.location.origin.replace('5173', '3000'));
-    
     socket.emit('join_code_session', { 
       sessionId, 
       candidateName: user.name,
       scenario: activeScenario.id
     });
-
     return () => {
-      console.log("Disconnecting socket on unmount...");
       socket.disconnect();
     };
   }, [sessionId, user, activeScenario.id]);
@@ -104,15 +100,12 @@ export default function InterviewSession() {
       });
 
       if (scenarioIndex < SCENARIO_SEQUENCE.length - 1) {
-        // Move to next scenario
         setScenarioIndex(prev => prev + 1);
         setShowFollowUp(false);
         setFollowUpAnswer('');
         setFollowUpQuestion('');
         setIsFinishing(false);
-        // Terminal will reset because activeScenario changes
       } else {
-        // Last scenario done, go to report
         if (sessionId) {
           navigate(`/report/${sessionId}`);
         } else {
@@ -127,47 +120,99 @@ export default function InterviewSession() {
   };
 
   return (
-    <div className="h-screen w-screen flex bg-[#050505] overflow-hidden font-sans">
-      <div className="w-[60%] h-full p-6 bg-black relative">
-         <div className="flex justify-between items-center mb-4">
-           <div className="flex gap-2">
-             <div className="w-3 h-3 rounded-full bg-red-500"></div>
-             <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-             <div className="w-3 h-3 rounded-full bg-green-500"></div>
-           </div>
-           <div className="text-xs text-gray-500 font-mono tracking-widest uppercase">
-             Live Session: {sessionId?.substring(0, 8)}...
-           </div>
-         </div>
-         <div className="h-[calc(100%-2rem)]">
-           <TerminalComponent key={activeScenario.id} onCommand={terminalState.handleCommand} />
-         </div>
-
-         {/* AI Follow-up Overlay */}
-         {showFollowUp && (
-           <div className="absolute inset-0 bg-[#050505]/90 backdrop-blur-md flex items-center justify-center p-12 z-50 animate-in fade-in zoom-in duration-500">
-             <div className="max-w-2xl w-full bg-white/5 border border-white/10 p-10 rounded-[40px] shadow-2xl relative overflow-hidden">
-               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-               <h3 className="text-2xl font-bold mb-6 text-indigo-400">Contextual Follow-up</h3>
-               <p className="text-lg text-gray-200 mb-8 leading-relaxed italic">"{followUpQuestion || 'Analyzing your solution...'}"</p>
-               <textarea
-                 className="w-full bg-black/50 border border-white/10 rounded-2xl p-6 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all min-h-[150px] mb-8"
-                 placeholder="Enter your explanation..."
-                 value={followUpAnswer}
-                 onChange={(e) => setFollowUpAnswer(e.target.value)}
-               ></textarea>
-               <button 
-                 onClick={submitFollowUp}
-                 disabled={!followUpAnswer || isFinishing}
-                 className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center disabled:opacity-50"
-               >
-                 {isFinishing ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : "Complete Interview"}
-               </button>
+    <div className="h-screen w-screen flex bg-tally-bg overflow-hidden font-sans">
+      <div className="w-[62%] h-full p-10 flex flex-col relative">
+         <header className="flex justify-between items-center mb-8">
+           <motion.div 
+             initial={{ opacity: 0, x: -20 }}
+             animate={{ opacity: 1, x: 0 }}
+             className="flex items-center gap-3"
+           >
+             <div className="p-2 bg-tally-blue text-white rounded-tally-lg">
+               <TerminalIcon className="w-5 h-5" />
              </div>
+             <div>
+               <h2 className="text-xl font-bold text-tally-text-primary tracking-tight leading-none mb-1">Live Terminal</h2>
+               <div className="text-[10px] text-tally-text-secondary/60 font-bold uppercase tracking-widest">
+                 Session UUID: {sessionId?.substring(0, 8)}...
+               </div>
+             </div>
+           </motion.div>
+           
+           <div className="flex gap-2">
+             <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
+             <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
+             <div className="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
            </div>
-         )}
+         </header>
+
+         <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex-1 bg-white border border-tally-border rounded-tally-xl shadow-sm overflow-hidden p-6 relative"
+         >
+           <TerminalComponent key={activeScenario.id} onCommand={terminalState.handleCommand} />
+         </motion.div>
+
+         <AnimatePresence>
+           {showFollowUp && (
+             <motion.div 
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               exit={{ opacity: 0 }}
+               className="fixed inset-0 bg-white/60 backdrop-blur-md flex items-center justify-center p-12 z-50"
+             >
+               <motion.div 
+                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                 animate={{ opacity: 1, scale: 1, y: 0 }}
+                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                 className="max-w-2xl w-full bg-white border border-tally-border p-12 rounded-tally-xl shadow-2xl relative overflow-hidden"
+               >
+                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-tally-blue to-tally-pink"></div>
+                 
+                 <div className="flex items-center gap-3 mb-8">
+                   <div className="p-2.5 bg-tally-blue/10 text-tally-blue rounded-full">
+                     <Sparkles className="w-6 h-6" />
+                   </div>
+                   <h3 className="text-3xl font-bold text-tally-text-primary tracking-tight">Contextual Verification</h3>
+                 </div>
+
+                 <p className="text-xl text-tally-text-primary mb-10 leading-relaxed font-medium italic">
+                    "{followUpQuestion || 'Analyzing your performance and technical decisions...'}"
+                 </p>
+
+                 <div className="relative mb-10">
+                   <textarea
+                     className="w-full bg-tally-bg border border-tally-border rounded-tally-lg p-6 text-tally-text-primary placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-tally-blue/20 transition-all min-h-[160px] font-medium"
+                     placeholder="State your technical justification..."
+                     value={followUpAnswer}
+                     onChange={(e) => setFollowUpAnswer(e.target.value)}
+                   ></textarea>
+                 </div>
+
+                 <motion.button 
+                   whileHover={{ scale: 1.01 }}
+                   whileTap={{ scale: 0.99 }}
+                   onClick={submitFollowUp}
+                   disabled={!followUpAnswer || isFinishing}
+                   className="w-full bg-tally-blue hover:bg-blue-600 text-white font-bold py-5 rounded-full transition-all shadow-lg shadow-tally-blue/10 flex items-center justify-center gap-3 disabled:opacity-50"
+                 >
+                   {isFinishing ? (
+                     <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                   ) : (
+                     <>
+                        <span className="text-lg">Submit & Continue</span>
+                        <ArrowRight className="w-5 h-5" />
+                     </>
+                   )}
+                 </motion.button>
+               </motion.div>
+             </motion.div>
+           )}
+         </AnimatePresence>
       </div>
-      <div className="w-[40%] h-full bg-[#0a0a0a]">
+
+      <div className="w-[38%] h-full bg-tally-surface border-l border-tally-border shadow-[-10px_0_30px_rgba(0,0,0,0.02)] relative z-10">
          <ScenarioBrief 
             scenario={activeScenario} 
             duration={terminalState.duration} 

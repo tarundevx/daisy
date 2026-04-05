@@ -10,21 +10,21 @@ import AdminDashboard from './pages/AdminDashboard';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen bg-[#050505] flex items-center justify-center"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
+  if (loading) return <div className="min-h-screen bg-tally-bg flex items-center justify-center"><div className="w-10 h-10 border-4 border-tally-blue border-t-transparent rounded-full animate-spin"></div></div>;
   if (!user) return <Navigate to="/login" />;
   return children;
 };
 
 const AdminRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen bg-[#050505] flex items-center justify-center"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
+  if (loading) return <div className="min-h-screen bg-tally-bg flex items-center justify-center"><div className="w-10 h-10 border-4 border-tally-blue border-t-transparent rounded-full animate-spin"></div></div>;
   if (!user || user.role !== 'admin') return <Navigate to="/dashboard" />;
   return children;
 };
 
 const RootRedirect = () => {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen bg-[#050505] flex items-center justify-center"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
+  if (loading) return <div className="min-h-screen bg-tally-bg flex items-center justify-center"><div className="w-10 h-10 border-4 border-tally-blue border-t-transparent rounded-full animate-spin"></div></div>;
   if (!user) return <Navigate to="/login" />;
   return user.role === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/dashboard" />;
 };

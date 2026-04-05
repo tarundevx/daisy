@@ -20,7 +20,12 @@ export function TerminalComponent({ onCommand }) {
 
     const xterm = new Terminal({
       cursorBlink: true,
-      theme: { background: '#111827', foreground: '#f3f4f6' }, // Tailwind gray-900
+      theme: { 
+        background: '#ffffff', 
+        foreground: '#111827',
+        cursor: '#0072e3',
+        selectionBackground: '#0072e333'
+      },
       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
       fontSize: 14,
       scrollback: 1000,
@@ -35,17 +40,8 @@ export function TerminalComponent({ onCommand }) {
     xterm.loadAddon(fitAddon);
     xtermRef.current = xterm;
 
-    // Enable Copy to clipboard on selection
-    xterm.onSelectionChange(() => {
-      const selection = xterm.getSelection();
-      if (selection) {
-        // Many browsers allow this if it's within a user interaction
-        // but xterm usually handles the 'Copy' shortcut fine if we don't intercept it.
-      }
-    });
-
     const prompt = () => {
-      xterm.write('\x1b[32mroot@sandbox\x1b[0m:\x1b[34m/\x1b[0m# ');
+      xterm.write('\x1b[1;34mroot@sandbox\x1b[0m:\x1b[36m/\x1b[0m# ');
     };
 
     xterm.writeln('Welcome to Daisy Sandbox. System initialized.');

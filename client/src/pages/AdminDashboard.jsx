@@ -2,27 +2,38 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   Users, Activity, ClipboardList, ShieldCheck, 
-  ExternalLink, Search, RefreshCw, AlertCircle, LogOut
+  ExternalLink, Search, RefreshCw, AlertCircle, LogOut, TrendingUp
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const socketURL = window.location.hostname === 'localhost' 
   ? 'http://localhost:3000' 
   : `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}`;
-const socket = io(socketURL);
 
-const StatCard = ({ icon, label, value, color }) => (
-  <div className="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-md">
-    <div className="flex items-center gap-4 mb-2">
-      <div className={`p-3 rounded-2xl ${color} bg-opacity-10 text-opacity-100`}>
-        {React.cloneElement(icon, { className: 'w-6 h-6' })}
+const StatCard = ({ icon, label, value, color, delay }) => (
+  <motion.div 
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay }}
+    className="bg-tally-surface border border-tally-border p-8 rounded-tally-xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group"
+  >
+    <div className="absolute -right-4 -top-4 w-24 h-24 bg-tally-bg rounded-full scale-0 group-hover:scale-100 transition-transform duration-500"></div>
+    <div className="flex items-center gap-5 mb-4 relative z-10">
+      <div className={`p-4 rounded-tally-lg ${color} bg-opacity-10 text-opacity-100`}>
+        {React.cloneElement(icon, { className: 'w-7 h-7' })}
       </div>
-      <span className="text-gray-400 font-medium text-sm">{label}</span>
+      <div>
+        <span className="text-tally-text-secondary font-bold text-xs uppercase tracking-widest leading-none block mb-1">{label}</span>
+        <div className="text-4xl font-bold text-tally-text-primary tracking-tight">{value}</div>
+      </div>
     </div>
-    <div className="text-3xl font-bold text-white tracking-tight">{value}</div>
-  </div>
+    <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 w-fit px-2 py-0.5 rounded-full relative z-10 border border-emerald-100">
+      <TrendingUp className="w-3 h-3" /> Live
+    </div>
+  </motion.div>
 );
 
 export default function AdminDashboard() {
@@ -56,17 +67,11 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchData();
-    
-    // Connect to Precision Tracker
     const socket = io(socketURL);
-
     socket.emit('join_admin_room');
-
     socket.on('update_live_sessions', (updatedSessions) => {
-      console.log('Precision Sync:', updatedSessions);
       setLiveSessions(updatedSessions);
     });
-
     return () => {
       socket.disconnect();
     };
@@ -79,31 +84,36 @@ export default function AdminDashboard() {
 
   if (loading && sessions.length === 0) {
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-        <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
+      <div className="min-h-screen bg-tally-bg flex items-center justify-center">
+        <RefreshCw className="w-10 h-10 text-tally-blue animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-8 font-sans">
+    <div className="min-h-screen bg-tally-bg p-8 md:p-12">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-12">
-          <div>
-            <h1 className="text-4xl font-extrabold tracking-tight mb-2 flex items-center gap-3 text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
-              <ShieldCheck className="w-10 h-10 text-indigo-400" />
-              HR Admin Console
-            </h1>
-            <p className="text-gray-400 font-medium">Monitoring platform health and candidate performance.</p>
+        <header className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-8">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <div className="flex items-center gap-3 mb-4">
+               <div className="p-3 bg-tally-blue text-white rounded-tally-lg">
+                  <ShieldCheck className="w-8 h-8" />
+               </div>
+               <h1 className="text-5xl font-bold tracking-tight text-tally-text-primary">Admin Console</h1>
+            </div>
+            <p className="text-tally-text-secondary text-lg font-medium">Monitoring platform health and candidate performance.</p>
             
-            {/* Global Access Code Widget */}
-            <div className="mt-6 flex items-center gap-4 bg-white/5 border border-white/10 p-3 pl-5 rounded-2xl w-fit backdrop-blur-md">
+            <div className="mt-8 flex items-center gap-4 bg-tally-surface border border-tally-border p-4 pr-6 rounded-tally-xl w-fit shadow-sm">
               <div className="flex flex-col">
-                <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Global Access Code</span>
-                <span className="font-mono text-indigo-400 font-bold tracking-tighter">{commonCode || 'Loading...'}</span>
+                <span className="text-[10px] text-tally-text-secondary uppercase tracking-widest font-bold mb-1">Global Access Code</span>
+                <span className="font-mono text-tally-blue font-bold text-xl tracking-tight leading-none">{commonCode || 'Loading...'}</span>
               </div>
-              <button 
+              <motion.button 
+                whileHover={{ scale: 1.1, rotate: 180 }}
                 onClick={async () => {
                   if (!window.confirm('Regenerate common access code? Old code will stop working immediately.')) return;
                   setIsRegenerating(true);
@@ -114,54 +124,60 @@ export default function AdminDashboard() {
                   setIsRegenerating(false);
                 }}
                 disabled={isRegenerating}
-                className="p-2 hover:bg-white/10 rounded-xl transition-all text-gray-400 hover:text-white"
-                title="Regenerate Global Code"
+                className="p-3 hover:bg-tally-bg rounded-full transition-all text-tally-text-secondary hover:text-tally-blue"
               >
-                <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
-              </button>
+                <RefreshCw className={`w-5 h-5 ${isRegenerating ? 'animate-spin' : ''}`} />
+              </motion.button>
             </div>
-          </div>
+          </motion.div>
+
           <div className="flex items-center gap-4">
             <button 
               onClick={fetchData} 
-              className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all group"
+              className="p-4 bg-tally-surface hover:bg-gray-50 border border-tally-border rounded-tally-lg transition-all shadow-sm"
             >
-              <RefreshCw className={`w-5 h-5 text-gray-400 group-hover:text-white ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-5 h-5 text-tally-text-secondary ${loading ? 'animate-spin' : ''}`} />
             </button>
             <button 
               onClick={() => { logout(); navigate('/login'); }} 
-              className="px-5 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-500 rounded-2xl transition-all flex items-center gap-2 font-bold"
+              className="px-6 py-4 bg-red-50 hover:bg-red-100 border border-red-100 text-red-600 rounded-tally-lg transition-all flex items-center gap-2 font-bold shadow-sm"
             >
               <LogOut className="w-5 h-5" />
               Logout
             </button>
           </div>
-        </div>
+        </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <StatCard icon={<Users />} label="Total Candidates" value={candidates.length} color="bg-blue-500 text-blue-400" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 text-blue-600">
+          <StatCard icon={<Users />} label="Total Candidates" value={candidates.length} color="bg-blue-100 text-tally-blue" delay={0.1} />
           <StatCard 
             icon={<Activity />} 
             label="Live Active Sessions" 
             value={liveSessions.filter(ls => ls.scenario_id !== 'Lobby' && ls.scenario_id !== 'Authenticating').length} 
-            color="bg-emerald-500 text-emerald-400" 
+            color="bg-emerald-100 text-emerald-600" 
+            delay={0.2} 
           />
-          <StatCard icon={<ClipboardList />} label="Total Assessments" value={sessions.length} color="bg-purple-500 text-purple-400" />
+          <StatCard icon={<ClipboardList />} label="Total Assessments" value={sessions.length} color="bg-pink-100 text-tally-pink" delay={0.3} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Candidates List */}
-          <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-[40px] p-8 backdrop-blur-xl">
-             <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-bold flex items-center gap-3">
-                   <Users className="w-6 h-6 text-indigo-400" /> Candidate Pipeline
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="lg:col-span-2 bg-tally-surface border border-tally-border rounded-tally-xl p-10 shadow-sm"
+          >
+             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+                <h2 className="text-3xl font-bold flex items-center gap-4 text-tally-text-primary">
+                   <Users className="w-8 h-8 text-tally-blue" /> Candidate Pipeline
                 </h2>
-                <div className="relative">
-                   <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                <div className="relative w-full md:w-80">
+                   <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-tally-text-secondary" />
                    <input 
                       type="text" 
                       placeholder="Search candidates..." 
-                      className="bg-[#111] border border-white/10 rounded-2xl py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all w-64"
+                      className="w-full bg-tally-bg border border-tally-border rounded-tally-lg py-3.5 pl-12 pr-4 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-tally-blue/20 transition-all"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                    />
@@ -171,124 +187,137 @@ export default function AdminDashboard() {
              <div className="overflow-x-auto">
                 <table className="w-full">
                    <thead>
-                      <tr className="text-left text-gray-500 text-xs font-bold uppercase tracking-widest border-b border-white/5">
-                         <th className="pb-4 px-4">Candidate</th>
-                         <th className="pb-4 px-4">Status</th>
-                         <th className="pb-4 px-4">Score</th>
-                         <th className="pb-4 px-4 text-right">Actions</th>
+                      <tr className="text-left text-tally-text-secondary text-xs font-bold uppercase tracking-widest border-b border-tally-border">
+                         <th className="pb-5 px-4 font-bold">Candidate</th>
+                         <th className="pb-5 px-4 font-bold">Status</th>
+                         <th className="pb-5 px-4 font-bold">Score</th>
+                         <th className="pb-5 px-4 font-bold text-right">Actions</th>
                       </tr>
                    </thead>
-                   <tbody className="divide-y divide-white/5">
-                      {filteredCandidates.map(can => (
-                         <tr key={can.id} className="group hover:bg-white/[0.02] transition-colors">
-                            <td className="py-4 px-4">
-                               <div className="font-bold text-gray-200 group-hover:text-white">{can.name}</div>
-                               <div className="text-xs text-gray-500">{can.email}</div>
+                   <tbody className="divide-y divide-tally-border">
+                      {filteredCandidates.map((can, idx) => (
+                         <motion.tr 
+                            key={can.id} 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.5 + (idx * 0.05) }}
+                            className="group hover:bg-tally-bg transition-colors"
+                         >
+                            <td className="py-6 px-4">
+                               <div className="font-bold text-tally-text-primary group-hover:text-tally-blue text-lg mb-0.5">{can.name}</div>
+                               <div className="text-xs text-tally-text-secondary font-medium uppercase tracking-tight">{can.email}</div>
                             </td>
-                            <td className="py-4 px-4">
-                               <span className="text-xs font-mono px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded-full">
+                            <td className="py-6 px-4">
+                               <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 bg-tally-blue/10 text-tally-blue rounded-full border border-tally-blue/10">
                                   {can.total_sessions} Sessions
                                </span>
                             </td>
-                            <td className="py-4 px-4">
-                               <span className="font-mono text-gray-300">
-                                  {can.avg_score ? `${Math.round(can.avg_score)}%` : 'N/A'}
+                            <td className="py-6 px-4">
+                               <span className="font-bold text-tally-text-primary text-lg">
+                                  {can.avg_score ? `${Math.round(can.avg_score)}%` : '—'}
                                </span>
                             </td>
-                            <td className="py-4 px-4 text-right">
+                            <td className="py-6 px-4 text-right">
                                <button 
                                   onClick={() => can.latest_session_id && navigate(`/report/${can.latest_session_id}`)}
-                                  className={`text-indigo-400 hover:text-indigo-300 transition-colors ${!can.latest_session_id ? 'opacity-20 cursor-not-allowed' : ''}`}
+                                  className={`p-3 rounded-full hover:bg-tally-surface border border-transparent hover:border-tally-border text-tally-blue hover:text-blue-700 transition-all ${!can.latest_session_id ? 'opacity-10 cursor-not-allowed' : ''}`}
                                   disabled={!can.latest_session_id}
-                                  title={can.latest_session_id ? "View Latest Report" : "No reports available"}
                                >
-                                  <ExternalLink className="w-4 h-4" />
+                                  <ExternalLink className="w-5 h-5" />
                                </button>
                             </td>
-                         </tr>
+                         </motion.tr>
                       ))}
                    </tbody>
                 </table>
              </div>
-          </div>
+          </motion.div>
 
-          {/* Right Column Layout */}
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-10">
              {/* Live Monitoring Panel */}
-             <div className="bg-white/5 border border-white/10 rounded-[40px] p-8 backdrop-blur-xl">
-             <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
-                <Activity className="w-6 h-6 text-emerald-400" /> Live Activity
-             </h2>
-             <div className="space-y-4">
-                {liveSessions.length === 0 && (
-                   <div className="text-center py-12 text-gray-500 italic text-sm">
-                      No active sessions currently.
-                   </div>
-                )}
-                {liveSessions.map(ls => {
-                   const isLobby = ls.scenario_id === 'Lobby' || ls.scenario_id === 'Authenticating';
-                   return (
-                    <div key={ls.id} className={`p-4 rounded-3xl bg-white/5 border border-white/5 group hover:border-emerald-500/30 transition-all ${isLobby ? 'opacity-60 saturate-50' : ''}`}>
-                       <div className="flex justify-between items-start mb-2">
-                          <div className="font-bold text-gray-200">{ls.candidate_name}</div>
-                          <div className={`w-2 h-2 rounded-full animate-pulse ${isLobby ? 'bg-gray-500' : 'bg-emerald-500'}`}></div>
-                       </div>
-                       <div className={`text-xs font-mono mb-3 capitalize ${isLobby ? 'text-gray-500' : 'text-indigo-400'}`}>
-                          {isLobby ? (ls.scenario_id === 'Authenticating' ? 'Verification Screen' : 'Main Dashboard') : `Scenario: ${ls.scenario_id.replace(/_/g, ' ')}`}
-                       </div>
-                       {!isLobby && (
-                         <div className="p-3 bg-black/40 rounded-2xl flex flex-col gap-1 border border-white/5">
-                            <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Latest Action</div>
-                            <div className="text-xs text-gray-300 font-mono italic">
-                               &gt; {ls.last_event || 'Just started...'}
-                            </div>
+             <motion.div 
+               initial={{ opacity: 0, x: 20 }}
+               animate={{ opacity: 1, x: 0 }}
+               transition={{ delay: 0.6 }}
+               className="bg-tally-surface border border-tally-border rounded-tally-xl p-8 shadow-sm flex-1"
+             >
+               <h2 className="text-2xl font-bold mb-8 flex items-center gap-3 text-tally-text-primary">
+                  <Activity className="w-6 h-6 text-emerald-500" /> Live Activity
+               </h2>
+               <div className="space-y-4">
+                  {liveSessions.length === 0 && (
+                     <div className="text-center py-16 text-tally-text-secondary/50 italic font-medium">
+                        No active sessions.
+                     </div>
+                  )}
+                  {liveSessions.map(ls => {
+                     const isLobby = ls.scenario_id === 'Lobby' || ls.scenario_id === 'Authenticating';
+                     return (
+                      <div key={ls.id} className={`p-5 rounded-tally-lg bg-tally-bg border border-tally-border group hover:border-emerald-500/30 transition-all ${isLobby ? 'opacity-60 saturate-50' : ''}`}>
+                         <div className="flex justify-between items-start mb-3">
+                            <div className="font-bold text-tally-text-primary text-lg">{ls.candidate_name}</div>
+                            <div className={`w-3 h-3 rounded-full animate-pulse mt-1.5 ${isLobby ? 'bg-gray-400' : 'bg-emerald-500'}`}></div>
                          </div>
-                       )}
-                    </div>
-                   );
-                })}
-             </div>
-          </div>
+                         <div className={`text-[10px] font-bold uppercase tracking-widest mb-4 ${isLobby ? 'text-gray-500' : 'text-tally-pink'}`}>
+                            {isLobby ? (ls.scenario_id === 'Authenticating' ? 'Verification' : 'Lobby') : `${ls.scenario_id.replace(/_/g, ' ')}`}
+                         </div>
+                         {!isLobby && (
+                           <div className="p-4 bg-white rounded-tally-lg flex flex-col gap-2 border border-tally-border shadow-sm">
+                              <div className="text-[9px] text-tally-text-secondary uppercase tracking-[0.2em] font-bold">Latest Action</div>
+                              <div className="text-xs text-tally-text-primary font-medium italic truncate">
+                                 {ls.last_event || 'Initializing session...'}
+                              </div>
+                           </div>
+                         )}
+                      </div>
+                     );
+                  })}
+               </div>
+             </motion.div>
 
-          {/* Session History Panel */}
-          <div className="bg-white/5 border border-white/10 rounded-[40px] p-8 backdrop-blur-xl">
-             <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
-                <ClipboardList className="w-6 h-6 text-purple-400" /> Session History
-             </h2>
-             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4f46e5 transparent' }}>
-                {sessions.length === 0 && (
-                   <div className="text-center py-12 text-gray-500 italic text-sm">
-                      No historical sessions.
-                   </div>
-                )}
-                {sessions.map(s => (
-                   <div key={s.id} className="p-4 rounded-3xl bg-white/5 border border-white/5 flex flex-col gap-2 transition-all hover:bg-white/10">
-                      <div className="flex justify-between items-center">
-                         <span className="font-bold text-gray-200">{s.candidate_name || 'Candidate'}</span>
-                         <span className="text-xs text-gray-500 font-mono">
-                            {new Date(s.started_at).toLocaleDateString()}
-                         </span>
-                      </div>
-                      <div className="text-xs font-mono text-purple-400 capitalize">
-                         {s.scenario_id ? s.scenario_id.replace(/_/g, ' ') : 'Unknown Scenario'}
-                      </div>
-                      <div className="flex justify-between items-center mt-3">
-                         <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full ${s.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
-                            {s.status}
-                         </span>
-                         <button 
-                            onClick={() => navigate(`/report/${s.id}`)}
-                            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1 font-bold"
-                         >
-                            View Report <ExternalLink className="w-3 h-3" />
-                         </button>
-                      </div>
-                   </div>
-                ))}
-             </div>
+             {/* Session History Panel */}
+             <motion.div 
+               initial={{ opacity: 0, x: 20 }}
+               animate={{ opacity: 1, x: 0 }}
+               transition={{ delay: 0.7 }}
+               className="bg-tally-surface border border-tally-border rounded-tally-xl p-8 shadow-sm"
+             >
+               <h2 className="text-2xl font-bold mb-8 flex items-center gap-3 text-tally-text-primary">
+                  <ClipboardList className="w-6 h-6 text-tally-pink" /> History
+               </h2>
+               <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                  {sessions.length === 0 && (
+                     <div className="text-center py-16 text-tally-text-secondary/50 italic font-medium">
+                        No previous sessions.
+                     </div>
+                  )}
+                  {sessions.map(s => (
+                     <div key={s.id} className="p-5 rounded-tally-lg border border-tally-border flex flex-col gap-3 transition-all hover:bg-tally-bg">
+                        <div className="flex justify-between items-center">
+                           <span className="font-bold text-tally-text-primary text-base">{s.candidate_name || 'Anonymous'}</span>
+                           <span className="text-[10px] text-tally-text-secondary font-bold uppercase tracking-wider">
+                              {new Date(s.started_at).toLocaleDateString()}
+                           </span>
+                        </div>
+                        <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-tally-pink truncate">
+                           {s.scenario_id ? s.scenario_id.replace(/_/g, ' ') : 'General Workspace'}
+                        </div>
+                        <div className="flex justify-between items-center mt-2 pt-3 border-t border-tally-bg">
+                           <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${s.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
+                              {s.status}
+                           </span>
+                           <button 
+                              onClick={() => navigate(`/report/${s.id}`)}
+                              className="text-xs text-tally-blue hover:text-blue-700 transition-colors flex items-center gap-1.5 font-bold uppercase tracking-widest"
+                           >
+                              Report <ExternalLink className="w-3 h-3" />
+                           </button>
+                        </div>
+                     </div>
+                  ))}
+               </div>
+             </motion.div>
           </div>
-
-        </div>
         </div>
       </div>
     </div>
