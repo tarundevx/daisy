@@ -1,12 +1,10 @@
 import { WebContainer } from '@webcontainer/api';
 
-let bootPromise = null;
-
 export const bootWebContainer = () => {
-  if (!bootPromise) {
-    bootPromise = WebContainer.boot();
+  if (!window.__wcBootPromise) {
+    window.__wcBootPromise = WebContainer.boot();
   }
-  return bootPromise;
+  return window.__wcBootPromise;
 };
 
 export const mountProject = async (wc, files) => {
@@ -63,13 +61,13 @@ export const runTests = async (wc, onOutput) => {
     
     if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd >= jsonStart) {
        const jsonString = resultOutput.substring(jsonStart, jsonEnd + 1);
-       return JSON.parse(jsonString);
+       const parsedJSON = JSON.parse(jsonString);
+       parsedJSON.rawOutput = resultOutput;
+       return parsedJSON;
     } else {
-       console.error("Could not find JSON output signature.");
-       return null;
+       return { rawOutput: resultOutput };
     }
   } catch (e) {
-    console.error('Error parsing Jest output:', e);
-    return null;
+    return { rawOutput: resultOutput };
   }
 };

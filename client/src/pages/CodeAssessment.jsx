@@ -102,7 +102,11 @@ export function CodeAssessment() {
         sessionId,
         command: 'npm test',
         scenarioId: 'rate_limiter',
-        sessionState: { passed: results.numFailedTestSuites === 0 }
+        sessionState: { 
+          passed: results?.numFailedTestSuites === 0,
+          code: files['middleware.js'].file.contents,
+          output: results?.rawOutput
+        }
       });
     }
   };
@@ -118,7 +122,8 @@ export function CodeAssessment() {
         scenarioId: 'rate_limiter',
         sessionState: { 
           code: files['middleware.js'].file.contents,
-          testsPassed: testResults?.numFailedTestSuites === 0
+          testsPassed: testResults?.numFailedTestSuites === 0,
+          output: testResults?.rawOutput
         }
       });
 

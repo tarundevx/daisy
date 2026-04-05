@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
-} from 'recharts';
+
 import { 
   Trophy, AlertCircle, BookOpen, Share2, ArrowLeft, CheckCircle2, XCircle
 } from 'lucide-react';
@@ -55,19 +53,6 @@ export default function Report() {
     );
   }
 
-  const chartData = [
-    { name: 'Correctness', value: report.correctness },
-    { name: 'Complexity', value: report.timeComplexity },
-    { name: 'Communication', value: report.communication },
-    { name: 'Edge Cases', value: report.edgeCaseHandling }
-  ];
-
-  const getColor = (value) => {
-    if (value >= 80) return '#10b981';
-    if (value >= 60) return '#f59e0b';
-    return '#ef4444';
-  };
-
   return (
     <div className="min-h-screen bg-[#050505] text-white p-6 font-sans">
       <div className="max-w-4xl mx-auto">
@@ -100,30 +85,6 @@ export default function Report() {
           <p className="text-gray-400 text-lg max-w-2xl mx-auto font-medium">
             A comprehensive breakdown of your algorithmic and communication skills extracted from your recent session.
           </p>
-        </div>
-
-        {/* Chart Section */}
-        <div className="bg-white/5 border border-white/10 p-10 rounded-[40px] mb-12 backdrop-blur-xl shadow-2xl">
-          <h3 className="text-2xl font-bold mb-10 text-center flex items-center justify-center">
-             <Trophy className="w-6 h-6 mr-3 text-yellow-400" /> Skill Breakdown
-          </h3>
-          <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                <XAxis dataKey="name" stroke="#666" tick={{ fill: '#888', fontSize: 13 }} dy={10} />
-                <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 13 }} dx={-10} domain={[0, 100]} />
-                <Tooltip 
-                  cursor={{ fill: 'transparent' }}
-                  contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '15px', padding: '12px' }}
-                />
-                <Bar dataKey="value" radius={[12, 12, 0, 0]} barSize={60}>
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={getColor(entry.value)} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
         </div>
 
         {/* Insights Grid */}

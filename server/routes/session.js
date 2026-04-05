@@ -53,11 +53,18 @@ router.post('/command', async (req, res) => {
     try {
       // Log command execution
       const eventPayload = { command, output: result.output ? result.output.substring(0, 100) : '' };
+      
+      // Override output with actual client terminal output if provided
+      if (sessionState?.output) {
+        eventPayload.output = sessionState.output.substring(0, 500); // Allow more context for AI
+      }
+      
       if (command === 'final_code_submission') {
         eventPayload.code = sessionState?.code;
         eventPayload.testsPassed = sessionState?.testsPassed;
       } else if (command === 'npm test') {
         eventPayload.testsPassed = sessionState?.passed;
+        eventPayload.code = sessionState?.code;
       }
       await logEvent(sessionId, 'command_executed', eventPayload);
     } catch (dbErr) {

@@ -34,18 +34,16 @@ router.get('/:sessionId', async (req, res) => {
     const events = eventsRes.rows;
 
     // 3. AI Analysis to generate report card
-    const prompt = `You are a Senior Technical Interviewer. Analyze these session events from a candidate's ${session.scenario_id} assessment.
+    const prompt = `You are a Senior Technical Engineering Manager. Analyze this candidate's interactive coding session. You will receive a history of their 'npm test' and 'final_code_submission' events containing their code iterations and terminal outputs.
     
-    1. Look in the events for an event where event_data.command is 'final_code_submission'. If found, evaluate the 'code' in the event_data for:
-       - Correctness (logic, edge cases)
-       - Complexity (Big O)
-       - Style (readability, modern JS)
-    2. If there are other 'command_executed' events, evaluate:
-       - Debugging strategy (systematic vs random)
-       - Tool knowledge (journalctl, curl, netstat, etc.)
-    3. Generate a structured JSON report.
+    1. Look at their sequence of actions. Did they struggle and iterate with many failing 'npm test' runs, or did they instantly write confident code and submit it? 
+    2. Analyze their ACTUAL behavioral workflow based on the raw terminal 'output' recorded. Are they systematically debugging errors step-by-step by reading the errors, or brute-forcing/spamming 'Submit'? Did they legitimately try to solve the problem dynamically, or ignore terminal logs?
+    3. Generate highly niche, tailored insights based strictly on how they behaved during the session relative to the test outputs, avoiding generic coding advice.
     
-    CRITICAL INSTRUCTION: You MUST populate 'strengths', 'areas', and 'topics' with at least 1-3 string items each. NEVER leave them empty. If the code was perfect, find areas for slight optimization. If the code was terrible, find strengths in their attempt.
+    CRITICAL INSTRUCTION: You MUST populate 'strengths', 'areas', and 'topics' with at least 1-3 highly personalized behavioral or technical string items each. NEVER leave them empty.
+    For example: 
+    - Strength: "Confident initial implementation; accurately handled the concurrent sliding window without needing iterative testing." 
+    - Growth Area: "Relied heavily on trial-and-error by submitting multiple failing test runs; ignored 'unexpected indent' terminal error logs continuously."
     
     Format:
     {
