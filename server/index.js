@@ -8,6 +8,8 @@ const { initializeTenant, seedKnowledgeBase } = require('./services/hydraService
 const sessionRoutes = require('./routes/session');
 const reportRoutes = require('./routes/report');
 const scenarioRoutes = require('./routes/scenario');
+const dashboardRoutes = require('./routes/dashboard');
+const { router: authRoutes } = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,6 +20,8 @@ app.use(express.json());
 app.use('/api/session', sessionRoutes);
 app.use('/api/report', reportRoutes);
 app.use('/api/scenario', scenarioRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 app.get('/api/health', (req, res) => res.send('Daisy Backend OK'));
 
@@ -27,8 +31,9 @@ app.get('/api/health', (req, res) => res.send('Daisy Backend OK'));
     try {
       console.log("Starting backend initialization...");
       await initializeTenant();
-      await seedKnowledgeBase();
-      console.log("Database initialized.");
+      // Run seeding in background so server can start immediately
+      seedKnowledgeBase().then(() => console.log("Knowledge base seeded."));
+      console.log("Database initialized (seeding in background).");
     } catch (err) {
       console.error("HydraDB boot error. Server will continue.", err);
     }

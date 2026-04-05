@@ -1,11 +1,13 @@
 const prodApiOutage = require('../scenarios/prodApiOutage');
 const slowApiEndpoint = require('../scenarios/slowApiEndpoint');
 const authVulnerability = require('../scenarios/authVulnerability');
+const rateLimiter = require('../scenarios/rateLimiter');
 
 const SCENARIOS = {
   [prodApiOutage.id]: prodApiOutage,
   [slowApiEndpoint.id]: slowApiEndpoint,
-  [authVulnerability.id]: authVulnerability
+  [authVulnerability.id]: authVulnerability,
+  [rateLimiter.id]: rateLimiter
 };
 
 function getScenario(scenarioId) {

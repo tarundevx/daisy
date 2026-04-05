@@ -12,6 +12,10 @@ const RUBRICS = [
   {
     id: "auth_vulnerability",
     text: "Scenario: Security Incident (IDOR). Available Resources: REST API with JWT auth, logs/access.log, logs/auth.log. Ideal path: (1) inspect access logs to see unauthorized access patterns to /api/user/, (2) check auth logs to confirm single user authentication, (3) test API manually using curl and the same valid token against multiple user IDs (101, 102). (4) Confirm IDOR by seeing Bob's data (102) with Alice's token. Success on identifying IDOR missing ownership validation. Red flags: assuming token forgery or network security failure instead of broken object level authorization."
+  },
+  {
+    id: "rate_limiter",
+    text: "Scenario: Code Challenge (API Rate Limiter & Cache). Available Resources: Monaco Editor, middleware.js. Ideal solution: (1) Sliding window implementation (using an array of timestamps or a bucket strategy), (2) Atomic cache updates to prevent stampede, (3) Correct 429 status code for rate limiting, (4) Sub-15ms response time for cached hits. Success: Passing all 3 test cases in Jest. Red flags: Global mutable state with race conditions, missing the 429 requirement, or cache layer not actually reducing latency."
   }
 ];
 

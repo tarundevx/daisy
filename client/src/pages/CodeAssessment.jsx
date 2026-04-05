@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Editor from '@monaco-editor/react';
-import { Play, Terminal as TerminalIcon, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Play, Terminal as TerminalIcon, CheckCircle2, XCircle, Loader2, Send } from 'lucide-react';
 import { bootWebContainer, mountProject, runTests } from '../services/webcontainerService';
 import { rateLimiterScenarioFiles } from '../scenarios/rateLimiterScenario';
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export function CodeAssessment() {
   const [activeFile, setActiveFile] = useState('middleware.js');
@@ -20,13 +23,24 @@ export function CodeAssessment() {
   const [isRunning, setIsRunning] = useState(false);
   const [testResults, setTestResults] = useState(null);
   const [wcInstance, setWcInstance] = useState(null);
+  const [sessionId, setSessionId] = useState(null);
+  const [isFinishing, setIsFinishing] = useState(false);
   
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const terminalRef = useRef(null);
   const termInstance = useRef(null);
 
   useEffect(() => {
     async function init() {
       try {
+        // Start backend session for tracking
+        const sessionRes = await axios.post('/api/session/start', {
+          userId: user?.id,
+          scenarioId: 'rate_limiter'
+        });
+        setSessionId(sessionRes.data.sessionId);
+
         const wc = await bootWebContainer();
         await mountProject(wc, files);
         setWcInstance(wc);
@@ -52,7 +66,7 @@ export function CodeAssessment() {
       }
     }
     init();
-  }, []);
+  }, [user?.id]);
 
   const handleEditorChange = (value) => {
     if (activeFileRef.current !== 'middleware.js') return;
@@ -81,6 +95,49 @@ export function CodeAssessment() {
     const results = await runTests(wcInstance, onOutput);
     setTestResults(results);
     setIsRunning(false);
+
+    // AI Logging: Log test run result
+    if (sessionId) {
+      await axios.post('/api/session/command', {
+        sessionId,
+        command: 'npm test',
+        scenarioId: 'rate_limiter',
+        sessionState: { passed: results.numFailedTestSuites === 0 }
+      });
+    }
+  };
+
+  const handleFinish = async () => {
+    if (!sessionId) return;
+    setIsFinishing(true);
+    try {
+      // 1. Log the final code submission as an event for AI analysis
+      await axios.post('/api/session/command', {
+        sessionId,
+        command: 'final_code_submission',
+        scenarioId: 'rate_limiter',
+        sessionState: { 
+          code: files['middleware.js'].file.contents,
+          testsPassed: testResults?.numFailedTestSuites === 0
+        }
+      });
+
+      // 2. Wrap up session
+      await axios.post('/api/session/end', {
+        sessionId,
+        userId: user?.id,
+        candidateName: user?.name,
+        scenarioId: 'rate_limiter',
+        sessionState: { solved: testResults?.numFailedTestSuites === 0 },
+        commandLog: [] // The backend already has events
+      });
+
+      // Crucial: Wait for DB propagation
+      setTimeout(() => navigate(`/report/${sessionId}`), 800);
+    } catch (err) {
+      console.error('Failed to finish assessment:', err);
+      setIsFinishing(false);
+    }
   };
 
   const isEditable = activeFile === 'middleware.js';
@@ -92,18 +149,31 @@ export function CodeAssessment() {
           <TerminalIcon className="w-6 h-6 text-indigo-400" />
           <h1 className="text-lg font-semibold tracking-wide text-gray-100">Backend System Design Task</h1>
         </div>
-        <button
-          onClick={handleRunTests}
-          disabled={isBooting || isRunning}
-          className={`flex items-center gap-2 px-5 py-2 rounded-md font-medium text-sm transition-all duration-200
-            ${isBooting || isRunning 
-              ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
-              : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40'
-            }`}
-        >
-          {isRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-          {isBooting ? 'Booting Sandbox...' : isRunning ? 'Running...' : 'Submit & Run Tests'}
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={handleRunTests}
+            disabled={isBooting || isRunning}
+            className={`flex items-center gap-2 px-5 py-2 rounded-md font-medium text-sm transition-all duration-200
+              ${isBooting || isRunning 
+                ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
+                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40'
+              }`}
+          >
+            {isRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+            {isBooting ? 'Booting Sandbox...' : isRunning ? 'Running...' : 'Submit & Run Tests'}
+          </button>
+
+          {testResults && (
+            <button
+              onClick={handleFinish}
+              disabled={isFinishing}
+              className="flex items-center gap-2 px-5 py-2 rounded-md font-bold text-sm bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-lg shadow-emerald-500/20"
+            >
+              {isFinishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Finish & View Report
+            </button>
+          )}
+        </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden">

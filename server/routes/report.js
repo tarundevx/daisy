@@ -1,29 +1,88 @@
 const express = require('express');
 const router = express.Router();
-const hydraService = require('../services/hydraService');
-const aiService = require('../services/aiService');
+const db = require('../db');
+const { auth } = require('./auth');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-router.post('/generate', async (req, res) => {
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+
+// Generate and Fetch Report
+router.get('/:sessionId', async (req, res) => {
+  const { sessionId } = req.params;
+
+  // Validate UUID format to prevent Postgres errors
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!sessionId || sessionId === "null" || !uuidRegex.test(sessionId)) {
+    return res.status(400).json({ error: 'Invalid session ID format' });
+  }
+
   try {
-    const { userId, candidateName, sessionData, sessionNumber } = req.body;
-    if (!userId || !sessionData) return res.status(400).json({ error: 'userId and sessionData required' });
+    // 1. Fetch existing session data
+    const sessionRes = await db.query('SELECT * FROM sessions WHERE id = $1', [sessionId]);
+    if (sessionRes.rows.length === 0) return res.status(404).json({ error: 'Session not found' });
+    const session = sessionRes.rows[0];
 
-    console.log(`[Report] Recalling history...`);
-    const candidateHistory = await hydraService.recallCandidateMemories(userId, "debugging patterns weak areas behaviors");
+    // If report already generated and NOT refreshing, return it
+    if (session.summary_json && req.query.refresh !== 'true') return res.json(session.summary_json);
+
+    // 2. Fetch all events for AI analysis
+    const eventsRes = await db.query(
+      'SELECT event_type, event_data, created_at FROM session_events WHERE session_id = $1 ORDER BY created_at ASC',
+      [sessionId]
+    );
+    const events = eventsRes.rows;
+
+    // 3. AI Analysis to generate report card
+    const prompt = `You are a Senior Technical Interviewer. Analyze these session events from a candidate's ${session.scenario_id} assessment.
     
-    console.log(`[Report] Recalling rubric...`);
-    const rubric = await hydraService.recallScenarioRubric(sessionData.scenarioId);
+    1. If there is a 'final_code_submission' event, evaluate the code for:
+       - Correctness (logic, edge cases)
+       - Complexity (Big O)
+       - Style (readability, modern JS)
+    2. If there are 'command_executed' events, evaluate:
+       - Debugging strategy (systematic vs random)
+       - Tool knowledge (journalctl, curl, netstat, etc.)
+    3. Generate a structured JSON report. 
+    
+    Format:
+    {
+      "correctness": number, 
+      "timeComplexity": number, 
+      "communication": number, 
+      "edgeCaseHandling": number,
+      "strengths": ["string"], 
+      "areas": ["string"], 
+      "topics": ["string"]
+    }
+    
+    Events: ${JSON.stringify(events)}
+    
+    Return ONLY pure JSON.`;
 
-    console.log(`[Report] Generating AI Report...`);
-    const report = await aiService.generateReport(sessionData, candidateHistory, rubric);
+    let reportData;
+    try {
+      const aiRes = await model.generateContent(prompt);
+      const response = await aiRes.response;
+      const text = response.text().replace(/```json|```/g, '').trim();
+      reportData = JSON.parse(text);
+    } catch (e) {
+      console.warn("AI Report Generation failed for session:", sessionId, "Error:", e.message);
+      reportData = {
+        correctness: 0, timeComplexity: 0, communication: 0, edgeCaseHandling: 0,
+        strengths: ["Analysis currently unavailable. Please check backend logs."],
+        areas: ["Ensure Gemini API key is valid and model 'gemini-3-flash-preview' is supported in your region."],
+        topics: ["General Assessment"]
+      };
+    }
 
-    console.log(`[Report] Logging AI Assessment...`);
-    await hydraService.logAIAssessment(userId, sessionNumber || 1, JSON.stringify(report), report.score || 0, report.hiringSignal || 'unknown');
+    // 4. Persistence
+    await db.query('UPDATE sessions SET summary_json = $1, status = \'completed\', ended_at = NOW() WHERE id = $2', [reportData, sessionId]);
 
-    res.json(report);
+    res.json(reportData);
   } catch (error) {
-    console.error('[/api/report/generate] Error:', error);
-    res.status(500).json({ error: 'Failed to generate report', details: error.toString(), stack: error.stack });
+    console.error('Report generation error:', error);
+    res.status(500).json({ error: 'Failed to generate report' });
   }
 });
 
