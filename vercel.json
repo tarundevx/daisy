@@ -1,5 +1,20 @@
 {
   "version": 2,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cross-Origin-Embedder-Policy",
+          "value": "require-corp"
+        },
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin"
+        }
+      ]
+    }
+  ],
   "builds": [
     {
       "src": "server/index.js",
@@ -8,7 +23,9 @@
     {
       "src": "client/package.json",
       "use": "@vercel/static-build",
-      "config": { "distDir": "dist" }
+      "config": {
+        "distDir": "dist"
+      }
     }
   ],
   "routes": [
@@ -19,11 +36,7 @@
     {
       "src": "/(.*)",
       "dest": "client/$1",
-      "check": true,
-      "headers": {
-        "Cross-Origin-Embedder-Policy": "require-corp",
-        "Cross-Origin-Opener-Policy": "same-origin"
-      }
+      "check": true
     }
   ]
 }
