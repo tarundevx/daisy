@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 
-const socket = io(window.location.origin.replace('5173', '3000'));
+const SOCKET_URL = window.location.origin.replace(/:\d+$/, ':3000');
 
 const StatCard = ({ icon, label, value, color }) => (
   <div className="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-md">
@@ -34,14 +34,12 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [sessRes, candRes, liveRes] = await Promise.all([
+      const [sessRes, candRes] = await Promise.all([
         axios.get('/api/admin/sessions'),
         axios.get('/api/admin/candidates'),
-        axios.get('/api/admin/live')
       ]);
       setSessions(sessRes.data);
       setCandidates(candRes.data);
-      setLiveSessions(liveRes.data);
     } catch (err) {
       console.error('Admin Dashboard Fetch Error:', err);
     } finally {
@@ -52,13 +50,13 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchData();
     
-    // Connect to Precision Tracker
-    const socket = io(window.location.origin.replace('5173', '3000'));
+    // Connect to real-time tracker
+    const socket = io(SOCKET_URL);
 
     socket.emit('join_admin_room');
 
-    socket.on('ACTIVE_SESSIONS_UPDATE', (updatedSessions) => {
-      console.log('Precision Sync:', updatedSessions);
+    socket.on('live_sessions_update', (updatedSessions) => {
+      console.log('Live sessions sync:', updatedSessions);
       setLiveSessions(updatedSessions);
     });
 
