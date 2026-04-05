@@ -1,6 +1,9 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
+const { initSocket } = require('./services/socketService');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const { initializeTenant, seedKnowledgeBase } = require('./services/hydraService');
@@ -10,8 +13,11 @@ const reportRoutes = require('./routes/report');
 const scenarioRoutes = require('./routes/scenario');
 const dashboardRoutes = require('./routes/dashboard');
 const { router: authRoutes } = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
+const server = http.createServer(app);
+const io = initSocket(server);
 const PORT = process.env.PORT || 3000;
 
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
@@ -22,6 +28,7 @@ app.use('/api/report', reportRoutes);
 app.use('/api/scenario', scenarioRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => res.send('Daisy Backend OK'));
 
@@ -40,8 +47,8 @@ app.get('/api/health', (req, res) => res.send('Daisy Backend OK'));
   }
 
   if (require.main === module) {
-    app.listen(PORT, () => {
-      console.log(`Server ready on port ${PORT}`);
+    server.listen(PORT, () => {
+      console.log(`Server ready on port ${PORT} (WebSockets enabled)`);
     });
   }
 })();

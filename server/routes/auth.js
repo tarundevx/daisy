@@ -20,8 +20,8 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     
-    const token = jwt.sign({ userId: user.id, name: user.name }, JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+    const token = jwt.sign({ userId: user.id, name: user.name, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -38,8 +38,8 @@ router.post('/signup', async (req, res) => {
       [email, passwordHash, name]
     );
     const user = result.rows[0];
-    const token = jwt.sign({ userId: user.id, name: user.name }, JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token, user });
+    const token = jwt.sign({ userId: user.id, name: user.name, role: user.role || 'candidate' }, JWT_SECRET, { expiresIn: '8h' });
+    res.json({ token, user: { ...user, role: user.role || 'candidate' } });
   } catch (error) {
     console.error('Signup error:', error);
     res.status(500).json({ error: 'Server error or User already exists' });

@@ -8,6 +8,9 @@ import { authVulnerability } from '../scenarios/authVulnerability';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import { io } from 'socket.io-client';
+
+const socket = io(window.location.origin.replace('5173', '3000'));
 
 const SCENARIO_MAP = {
   'prod_api_outage': prodApiOutage,
@@ -23,6 +26,7 @@ export default function InterviewSession() {
   const [scenarioIndex, setScenarioIndex] = useState(0);
   const [activeScenario, setActiveScenario] = useState(SCENARIO_MAP[SCENARIO_SEQUENCE[0]]);
   const [sessionId, setSessionId] = useState(null);
+  const isInitializing = React.useRef(false);
   const [showFollowUp, setShowFollowUp] = useState(false);
   const [followUpQuestion, setFollowUpQuestion] = useState('');
   const [followUpAnswer, setFollowUpAnswer] = useState('');
@@ -31,6 +35,9 @@ export default function InterviewSession() {
   const terminalState = useTerminal(activeScenario);
 
   useEffect(() => {
+    if (isInitializing.current) return;
+    isInitializing.current = true;
+
     const startSession = async () => {
       try {
         const res = await axios.post('/api/session/start', { 
@@ -45,6 +52,24 @@ export default function InterviewSession() {
     };
     startSession();
   }, [scenarioIndex, user?.id]);
+
+  useEffect(() => {
+    if (!sessionId || !user) return;
+    
+    const socket = io(window.location.origin.replace('5173', '3000'));
+    
+    socket.emit('join_session_room', { 
+      sessionId, 
+      userId: user.id, 
+      candidateName: user.name,
+      scenarioId: activeScenario.id
+    });
+
+    return () => {
+      console.log("Disconnecting socket on unmount...");
+      socket.disconnect();
+    };
+  }, [sessionId, user, activeScenario.id]);
 
   useEffect(() => {
     if (terminalState.solved && !showFollowUp && !isFinishing) {

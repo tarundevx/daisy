@@ -5,6 +5,7 @@ const db = require('../db');
 const hydraService = require('../services/hydraService');
 const scenarioEngine = require('../services/scenarioEngine');
 const { logEvent } = require('../services/eventLogger');
+const { getIO } = require('../services/socketService');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -20,7 +21,13 @@ router.post('/start', async (req, res) => {
     const scenario = scenarioEngine.getScenario(targetScenarioId);
 
     try {
-      // 1. Create the session in rowstore FIRST (to satisfy FK constraints)
+      // 1. Auto-cleanup: Mark any existing in_progress sessions for this user as abandoned
+      await db.query(`
+        UPDATE sessions SET status = 'abandoned', ended_at = NOW()
+        WHERE user_id = $1 AND status = 'in_progress'
+      `, [userId]);
+
+      // 2. Create the session in rowstore FIRST (to satisfy FK constraints)
       await db.query(`
         INSERT INTO sessions (id, user_id, scenario_id, status, started_at)
         VALUES ($1, $2, $3, $4, NOW())
@@ -67,6 +74,19 @@ router.post('/command', async (req, res) => {
         eventPayload.code = sessionState?.code;
       }
       await logEvent(sessionId, 'command_executed', eventPayload);
+      
+      // Real-time Push to Admins
+      try {
+        const io = getIO();
+        io.to('admins').emit('SESSION_ACTIVITY', {
+          sessionId,
+          command,
+          output: eventPayload.output,
+          type: 'command'
+        });
+      } catch (e) {
+        console.warn("Could not push real-time update:", e.message);
+      }
     } catch (dbErr) {
       console.warn("Could not log command to database:", dbErr.message);
     }
@@ -145,6 +165,17 @@ router.post('/end', async (req, res) => {
 
       // Log session end in columnar stream
       await logEvent(sessionId, 'session_ended', { userId, score: stats.solved ? 100 : 0 });
+
+      // Real-time Push to Admins: Instantly remove from live count
+      try {
+        const io = getIO();
+        io.to('admins').emit('CANDIDATE_DISCONNECTED', {
+          sessionId,
+          userId
+        });
+      } catch (e) {
+        console.warn("Could not push real-time disconnect:", e.message);
+      }
     } catch (dbErr) {
       console.warn("Could not update session record in database:", dbErr.message);
     }

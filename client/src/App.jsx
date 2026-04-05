@@ -6,12 +6,27 @@ import Dashboard from './pages/Dashboard';
 import Report from './pages/Report';
 import InterviewSession from './pages/InterviewSession';
 import { CodeAssessment } from './pages/CodeAssessment';
+import AdminDashboard from './pages/AdminDashboard';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return <div className="min-h-screen bg-[#050505] flex items-center justify-center"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
   if (!user) return <Navigate to="/login" />;
   return children;
+};
+
+const AdminRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="min-h-screen bg-[#050505] flex items-center justify-center"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
+  if (!user || user.role !== 'admin') return <Navigate to="/dashboard" />;
+  return children;
+};
+
+const RootRedirect = () => {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="min-h-screen bg-[#050505] flex items-center justify-center"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
+  if (!user) return <Navigate to="/login" />;
+  return user.role === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/dashboard" />;
 };
 
 function App() {
@@ -44,8 +59,16 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          <Route 
+            path="/admin" 
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            } 
+          />
           <Route path="/code" element={<CodeAssessment />} />
-          <Route path="/" element={<Navigate to="/dashboard" />} />
+          <Route path="/" element={<RootRedirect />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

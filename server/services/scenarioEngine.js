@@ -2,12 +2,18 @@ const prodApiOutage = require('../scenarios/prodApiOutage');
 const slowApiEndpoint = require('../scenarios/slowApiEndpoint');
 const authVulnerability = require('../scenarios/authVulnerability');
 const rateLimiter = require('../scenarios/rateLimiter');
+const dbConnectionPool = require('../scenarios/dbConnectionPool');
+const memoryLeak = require('../scenarios/memoryLeak');
+const cdnCache = require('../scenarios/cdnCache');
 
 const SCENARIOS = {
   [prodApiOutage.id]: prodApiOutage,
   [slowApiEndpoint.id]: slowApiEndpoint,
   [authVulnerability.id]: authVulnerability,
-  [rateLimiter.id]: rateLimiter
+  [rateLimiter.id]: rateLimiter,
+  [dbConnectionPool.id]: dbConnectionPool,
+  [memoryLeak.id]: memoryLeak,
+  [cdnCache.id]: cdnCache
 };
 
 function getScenario(scenarioId) {

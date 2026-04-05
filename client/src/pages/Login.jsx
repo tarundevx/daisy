@@ -18,12 +18,18 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
+      let userData;
       if (isLogin) {
-        await login(email, password);
+        userData = await login(email, password);
       } else {
-        await signup(email, password, name);
+        userData = await signup(email, password, name);
       }
-      navigate('/dashboard');
+      
+      if (userData?.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Authentication failed');
     } finally {
