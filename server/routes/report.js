@@ -36,14 +36,16 @@ router.get('/:sessionId', async (req, res) => {
     // 3. AI Analysis to generate report card
     const prompt = `You are a Senior Technical Interviewer. Analyze these session events from a candidate's ${session.scenario_id} assessment.
     
-    1. If there is a 'final_code_submission' event, evaluate the code for:
+    1. Look in the events for an event where event_data.command is 'final_code_submission'. If found, evaluate the 'code' in the event_data for:
        - Correctness (logic, edge cases)
        - Complexity (Big O)
        - Style (readability, modern JS)
-    2. If there are 'command_executed' events, evaluate:
+    2. If there are other 'command_executed' events, evaluate:
        - Debugging strategy (systematic vs random)
        - Tool knowledge (journalctl, curl, netstat, etc.)
-    3. Generate a structured JSON report. 
+    3. Generate a structured JSON report.
+    
+    CRITICAL INSTRUCTION: You MUST populate 'strengths', 'areas', and 'topics' with at least 1-3 string items each. NEVER leave them empty. If the code was perfect, find areas for slight optimization. If the code was terrible, find strengths in their attempt.
     
     Format:
     {

@@ -52,7 +52,14 @@ router.post('/command', async (req, res) => {
 
     try {
       // Log command execution
-      await logEvent(sessionId, 'command_executed', { command, output: result.output.substring(0, 100) });
+      const eventPayload = { command, output: result.output ? result.output.substring(0, 100) : '' };
+      if (command === 'final_code_submission') {
+        eventPayload.code = sessionState?.code;
+        eventPayload.testsPassed = sessionState?.testsPassed;
+      } else if (command === 'npm test') {
+        eventPayload.testsPassed = sessionState?.passed;
+      }
+      await logEvent(sessionId, 'command_executed', eventPayload);
     } catch (dbErr) {
       console.warn("Could not log command to database:", dbErr.message);
     }
