@@ -19,7 +19,11 @@
     {
       "src": "/(.*)",
       "dest": "client/$1",
-      "check": true
+      "check": true,
+      "headers": {
+        "Cross-Origin-Embedder-Policy": "require-corp",
+        "Cross-Origin-Opener-Policy": "same-origin"
+      }
     }
   ]
 }
