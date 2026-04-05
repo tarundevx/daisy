@@ -7,8 +7,11 @@ import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
 import axios from 'axios';
+import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+
+const SOCKET_URL = window.location.origin.replace(/:\d+$/, ':3000');
 
 export function CodeAssessment() {
   const [activeFile, setActiveFile] = useState('middleware.js');
@@ -30,6 +33,7 @@ export function CodeAssessment() {
   const navigate = useNavigate();
   const terminalRef = useRef(null);
   const termInstance = useRef(null);
+  const socketRef = useRef(null);
 
   useEffect(() => {
     async function init() {
@@ -39,7 +43,17 @@ export function CodeAssessment() {
           userId: user?.id,
           scenarioId: 'rate_limiter'
         });
-        setSessionId(sessionRes.data.sessionId);
+        const newSessionId = sessionRes.data.sessionId;
+        setSessionId(newSessionId);
+
+        // Connect via WebSocket so the admin panel tracks this live session
+        // and can detect when the tab is closed (ghost session prevention)
+        const socket = io(SOCKET_URL);
+        socketRef.current = socket;
+        socket.emit('join_code_session', {
+          sessionId: newSessionId,
+          candidateName: user?.name || 'Anonymous'
+        });
 
         const wc = await bootWebContainer();
         await mountProject(wc, files);
@@ -66,6 +80,14 @@ export function CodeAssessment() {
       }
     }
     init();
+
+    // Disconnect socket when component unmounts (tab close, navigation away)
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
   }, [user?.id]);
 
   const handleEditorChange = (value) => {
