@@ -31,6 +31,7 @@ export function CodeAssessment() {
   const navigate = useNavigate();
   const terminalRef = useRef(null);
   const termInstance = useRef(null);
+  const socketRef = useRef(null);
 
   useEffect(() => {
     async function init() {
@@ -76,6 +77,7 @@ export function CodeAssessment() {
   useEffect(() => {
     if (!sessionId) return;
     const socket = io(SOCKET_URL);
+    socketRef.current = socket;
     socket.emit('join_code_session', {
       sessionId: sessionId,
       candidateName: user?.name || 'Anonymous Candidate',
@@ -83,6 +85,7 @@ export function CodeAssessment() {
     });
     return () => {
       socket.disconnect();
+      socketRef.current = null;
     };
   }, [sessionId, user]);
 
@@ -103,6 +106,15 @@ export function CodeAssessment() {
     termInstance.current?.clear();
     termInstance.current?.writeln('Updating files...');
     await mountProject(wcInstance, files);
+    
+    if (socketRef.current && sessionId) {
+      socketRef.current.emit('session_event', {
+        sessionId,
+        type: 'test_run',
+        command: 'npm test'
+      });
+    }
+
     const onOutput = (data) => {
       termInstance.current?.write(data);
     };

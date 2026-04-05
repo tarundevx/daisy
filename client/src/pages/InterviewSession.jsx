@@ -31,6 +31,7 @@ export default function InterviewSession() {
   const [isFinishing, setIsFinishing] = useState(false);
 
   const terminalState = useTerminal(activeScenario);
+  const socketRef = useRef(null);
 
   useEffect(() => {
     let ignore = false;
@@ -59,6 +60,7 @@ export default function InterviewSession() {
   useEffect(() => {
     if (!sessionId || !user || !activeScenario) return;
     const socket = io(SOCKET_URL);
+    socketRef.current = socket;
     socket.emit('join_code_session', { 
       sessionId, 
       candidateName: user.name,
@@ -66,8 +68,21 @@ export default function InterviewSession() {
     });
     return () => {
       socket.disconnect();
+      socketRef.current = null;
     };
   }, [sessionId, user, activeScenario?.id]);
+
+  const handleTerminalCommand = (cmd) => {
+    const result = terminalState.handleCommand(cmd);
+    if (socketRef.current && sessionId) {
+      socketRef.current.emit('session_event', {
+        sessionId,
+        type: 'terminal_command',
+        command: cmd
+      });
+    }
+    return result;
+  };
 
   useEffect(() => {
     if (terminalState.solved && !showFollowUp && !isFinishing) {
@@ -154,7 +169,7 @@ export default function InterviewSession() {
              className="flex-1 bg-white border border-tally-border rounded-tally-xl shadow-sm overflow-hidden p-8 relative"
           >
             {activeScenario ? (
-               <TerminalComponent key={activeScenario.id} onCommand={terminalState.handleCommand} />
+               <TerminalComponent key={activeScenario.id} onCommand={handleTerminalCommand} />
             ) : (
                <div className="h-full w-full flex flex-col items-center justify-center bg-[#0a192f] rounded-lg">
                  <div className="w-10 h-10 border-4 border-tally-blue border-t-transparent rounded-full animate-spin mb-6"></div>

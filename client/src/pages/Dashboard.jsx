@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api, { SOCKET_URL } from '../api';
@@ -12,11 +12,13 @@ export default function Dashboard() {
   const [interviewCode, setInterviewCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const socketRef = useRef(null);
 
   useEffect(() => {
     if (!user) return;
     
     const socket = io(SOCKET_URL);
+    socketRef.current = socket;
     
     socket.emit('join_lobby', {
       candidateName: user.name,
@@ -25,8 +27,9 @@ export default function Dashboard() {
 
     return () => {
       socket.disconnect();
+      socketRef.current = null;
     };
-  }, [user, isVerified]);
+  }, [user, isVerified, SOCKET_URL]);
 
   const handleVerify = async (e) => {
     e.preventDefault();

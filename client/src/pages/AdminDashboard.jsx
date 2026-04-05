@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef } from 'react';
 import api, { SOCKET_URL } from '../api';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
@@ -37,6 +38,7 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const socketRef = useRef(null);
 
   const fetchData = async () => {
     try {
@@ -59,12 +61,14 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchData();
     const socket = io(socketURL);
+    socketRef.current = socket;
     socket.emit('join_admin_room');
     socket.on('update_live_sessions', (updatedSessions) => {
       setLiveSessions(updatedSessions);
     });
     return () => {
       socket.disconnect();
+      socketRef.current = null;
     };
   }, []);
 
