@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const getScoreColor = (score) => {
@@ -79,7 +79,7 @@ export default function Report() {
   useEffect(() => {
     const fetchReport = async () => {
       try {
-        const res = await axios.get(`/api/report/${sessionId}`);
+        const res = await api.get(`/report/${sessionId}`);
         setReport(res.data);
       } catch (err) {
         console.error('Failed to fetch report:', err);

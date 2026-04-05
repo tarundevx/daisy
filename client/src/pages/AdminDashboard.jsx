@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api, { SOCKET_URL } from '../api';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const socketURL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:3000' 
-  : `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}`;
+const socketURL = SOCKET_URL;
 
 const StatCard = ({ label, value, color, delay }) => (
   <motion.div 
@@ -45,9 +42,9 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       const [sessRes, candRes, settingsRes] = await Promise.all([
-        axios.get('/api/admin/sessions'),
-        axios.get('/api/admin/candidates'),
-        axios.get('/api/admin/settings')
+        api.get('/admin/sessions'),
+        api.get('/admin/candidates'),
+        api.get('/admin/settings')
       ]);
       setSessions(sessRes.data);
       setCandidates(candRes.data);
@@ -112,7 +109,7 @@ export default function AdminDashboard() {
                   if (!window.confirm('Regenerate access key? Legacy keys will expire immediately.')) return;
                   setIsRegenerating(true);
                   try {
-                    const res = await axios.post('/api/admin/settings/regenerate');
+                    const res = await api.post('/admin/settings/regenerate');
                     setCommonCode(res.data.common_access_code);
                   } catch (e) { console.error(e); }
                   setIsRegenerating(false);

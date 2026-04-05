@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api, { SOCKET_URL } from '../api';
 import { io } from 'socket.io-client';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -16,7 +16,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
     
-    const socket = io(window.location.origin.replace('5173', '3000'));
+    const socket = io(SOCKET_URL);
     
     socket.emit('join_lobby', {
       candidateName: user.name,
@@ -33,7 +33,7 @@ export default function Dashboard() {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.post('/api/auth/verify-code', { 
+      const res = await api.post('/auth/verify-code', { 
         email: user?.email, 
         code: interviewCode 
       });

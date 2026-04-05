@@ -7,7 +7,7 @@ import { slowApiEndpoint } from '../scenarios/slowApiEndpoint';
 import { authVulnerability } from '../scenarios/authVulnerability';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import api, { SOCKET_URL } from '../api';
 import { io } from 'socket.io-client';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -37,7 +37,7 @@ export default function InterviewSession() {
 
     const startSession = async () => {
       try {
-        const res = await axios.post('/api/session/start', { 
+        const res = await api.post('/session/start', { 
           userId: user?.id,
           scenarioId: SCENARIO_SEQUENCE[scenarioIndex]
         });
@@ -58,7 +58,7 @@ export default function InterviewSession() {
 
   useEffect(() => {
     if (!sessionId || !user || !activeScenario) return;
-    const socket = io(window.location.origin.replace('5173', '3000'));
+    const socket = io(SOCKET_URL);
     socket.emit('join_code_session', { 
       sessionId, 
       candidateName: user.name,
@@ -78,7 +78,7 @@ export default function InterviewSession() {
   const handleFinalSubmission = async () => {
     setShowFollowUp(true);
     try {
-      const res = await axios.post('/api/session/follow-up', {
+      const res = await api.post('/session/follow-up', {
         sessionId,
         code: terminalState.history.filter(h => h.command.includes('edit') || h.command.includes('cat')).map(h => h.command).join('\n'),
         explanation: "Candidate solved the current scenario."
@@ -93,7 +93,7 @@ export default function InterviewSession() {
   const submitFollowUp = async () => {
     setIsFinishing(true);
     try {
-      await axios.post('/api/session/end', {
+      await api.post('/session/end', {
         userId: user?.id,
         candidateName: user?.name,
         sessionId,

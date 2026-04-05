@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 const AuthContext = createContext();
 
@@ -10,8 +10,6 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('daisy_token');
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      // In a real app, verify the token here
       const savedUser = JSON.parse(localStorage.getItem('daisy_user'));
       setUser(savedUser);
     }
@@ -19,21 +17,19 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const res = await axios.post('/api/auth/login', { email, password });
+    const res = await api.post('/auth/login', { email, password });
     const { token, user } = res.data;
     localStorage.setItem('daisy_token', token);
     localStorage.setItem('daisy_user', JSON.stringify(user));
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     setUser(user);
     return user;
   };
 
   const signup = async (email, password, name) => {
-    const res = await axios.post('/api/auth/signup', { email, password, name });
+    const res = await api.post('/auth/signup', { email, password, name });
     const { token, user } = res.data;
     localStorage.setItem('daisy_token', token);
     localStorage.setItem('daisy_user', JSON.stringify(user));
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     setUser(user);
     return user;
   };
@@ -41,7 +37,6 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('daisy_token');
     localStorage.removeItem('daisy_user');
-    delete axios.defaults.headers.common['Authorization'];
     setUser(null);
   };
 

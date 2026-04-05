@@ -28,15 +28,14 @@
       }
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "server/index.js"
+      "source": "/api/:match*",
+      "destination": "server/index.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "client/$1",
-      "check": true
+      "source": "/((?!api/).*)",
+      "destination": "/client/$1"
     }
   ]
 }

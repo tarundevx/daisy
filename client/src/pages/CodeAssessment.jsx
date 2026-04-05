@@ -5,7 +5,7 @@ import { rateLimiterScenarioFiles } from '../scenarios/rateLimiterScenario';
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
-import axios from 'axios';
+import api, { SOCKET_URL } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
@@ -35,7 +35,7 @@ export function CodeAssessment() {
   useEffect(() => {
     async function init() {
       try {
-        const sessionRes = await axios.post('/api/session/start', {
+        const sessionRes = await api.post('/session/start', {
           userId: user?.id,
           scenarioId: 'rate_limiter'
         });
@@ -75,7 +75,7 @@ export function CodeAssessment() {
 
   useEffect(() => {
     if (!sessionId) return;
-    const socket = io(window.location.origin.replace('5173', '3000'));
+    const socket = io(SOCKET_URL);
     socket.emit('join_code_session', {
       sessionId: sessionId,
       candidateName: user?.name || 'Anonymous Candidate',
@@ -111,7 +111,7 @@ export function CodeAssessment() {
     setIsRunning(false);
 
     if (sessionId) {
-      await axios.post('/api/session/command', {
+      await api.post('/session/command', {
         sessionId,
         command: 'npm test',
         scenarioId: 'rate_limiter',
@@ -130,7 +130,7 @@ export function CodeAssessment() {
     if (!sessionId) return;
     setIsFinishing(true);
     try {
-      await axios.post('/api/session/command', {
+      await api.post('/session/command', {
         sessionId,
         command: 'final_code_submission',
         scenarioId: 'rate_limiter',
@@ -143,7 +143,7 @@ export function CodeAssessment() {
         }
       });
 
-      await axios.post('/api/session/end', {
+      await api.post('/session/end', {
         sessionId,
         userId: user?.id,
         candidateName: user?.name,
