@@ -14,7 +14,7 @@ export function useTerminal(scenarioMap) {
     setStartTime(null);
     setSolved(false);
     setDuration(0);
-  }, [scenarioMap.id]);
+  }, [scenarioMap?.id]);
 
   useEffect(() => {
     let interval;
@@ -38,6 +38,7 @@ export function useTerminal(scenarioMap) {
     setHistory(prev => [...prev, { command: normalizedCmd, timestamp: Date.now() }]);
 
     // Evaluate against scenarioMap
+    if (!scenarioMap) return { output: '' };
     let response = scenarioMap.commands[normalizedCmd];
 
     if (!response) {

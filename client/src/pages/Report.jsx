@@ -160,32 +160,58 @@ export default function Report() {
            className="bg-tally-surface border border-tally-border rounded-tally-xl p-10 md:p-12 shadow-sm relative overflow-hidden"
         >
            <div className="absolute top-0 right-0 w-32 h-32 bg-tally-bg opacity-40 rounded-full translate-x-16 -translate-y-16"></div>
-           <div className="flex flex-col md:flex-row justify-between gap-10">
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <span className="px-4 py-1 bg-tally-bg text-tally-blue text-[10px] font-bold uppercase tracking-[0.2em] rounded-full border border-tally-border flex items-center">
-                    {isCode ? <Code className="w-3.5 h-3.5 mr-2" /> : <Terminal className="w-3.5 h-3.5 mr-2" />}
-                    {isCode ? 'Code Sandbox' : 'Infra Audit'}
-                  </span>
-                  <span className="text-tally-text-secondary text-xs uppercase tracking-widest font-bold">{report.date}</span>
+           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+              <div className="lg:col-span-7 xl:col-span-8 flex flex-col justify-between">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <span className="px-4 py-1 bg-tally-bg text-tally-blue text-[10px] font-bold uppercase tracking-[0.2em] rounded-full border border-tally-border flex items-center">
+                      {isCode ? <Code className="w-3.5 h-3.5 mr-2" /> : <Terminal className="w-3.5 h-3.5 mr-2" />}
+                      {isCode ? 'Code Sandbox' : 'Infra Audit'}
+                    </span>
+                    <span className="text-tally-text-secondary text-xs uppercase tracking-widest font-bold">{report.date}</span>
+                  </div>
+                  <h2 className="text-4xl md:text-5xl font-bold text-tally-text-primary tracking-tight leading-tight">
+                     {report.assessment.title}
+                  </h2>
+                  <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full w-fit border border-emerald-100 italic">
+                    <TrendingUp className="w-4 h-4" />
+                    <span className="text-sm font-bold">Rubric Matched Assessment</span>
+                  </div>
                 </div>
-                <h2 className="text-4xl md:text-5xl font-bold text-tally-text-primary tracking-tight leading-tight">
-                   {report.assessment.title}
-                </h2>
-                <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full w-fit border border-emerald-100 italic">
-                  <TrendingUp className="w-4 h-4" />
-                  <span className="text-sm font-bold">Rubric Matched Assessment</span>
+
+                {/* Behavioral Integrity Tracking */}
+                <div className="mt-10 bg-white border border-tally-border p-6 rounded-tally-xl shadow-sm relative overflow-hidden group hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center gap-6">
+                  <div className={`absolute top-0 left-0 sm:w-1.5 sm:h-full w-full h-1.5 ${report.metrics.integrity?.score > 70 ? 'bg-emerald-500' : report.metrics.integrity?.score > 40 ? 'bg-amber-500' : 'bg-rose-500'}`}></div>
+                  <div className={`p-4 rounded-full flex-shrink-0 self-start sm:self-auto ${report.metrics.integrity?.score > 70 ? 'bg-emerald-50 text-emerald-600' : report.metrics.integrity?.score > 40 ? 'bg-amber-50 text-amber-500' : 'bg-rose-50 text-rose-500'}`}>
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-tally-text-secondary text-[10px] font-bold uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                      <Activity className="w-3.5 h-3.5 text-tally-blue" /> Integrity Check
+                    </div>
+                    <div className="text-sm text-tally-text-primary font-medium leading-relaxed italic">
+                       "{report.metrics.integrity?.analysis || 'Validating candidate behavior...'}"
+                    </div>
+                  </div>
+                  <div className="sm:text-right flex-shrink-0 sm:border-l border-t sm:border-t-0 border-tally-border sm:pl-6 pt-4 sm:pt-0">
+                     <div className="text-[10px] text-tally-text-secondary font-bold mb-1 uppercase tracking-widest">Trust Index</div>
+                     <div className={`text-4xl font-black tracking-tighter ${report.metrics.integrity?.score > 70 ? 'text-emerald-600' : report.metrics.integrity?.score > 40 ? 'text-amber-500' : 'text-rose-500'}`}>
+                        {report.metrics.integrity?.score}%
+                     </div>
+                  </div>
                 </div>
               </div>
 
-              <div className={`p-10 rounded-tally-xl border flex flex-col items-center justify-center gap-6 shadow-sm min-w-[280px] ${getScoreBg(report.metrics.overallScore)}`}>
-                  <CircularScore score={report.metrics.overallScore} />
-                  <div className="text-center">
-                    <div className="text-tally-text-primary font-bold text-sm uppercase tracking-widest mb-1">Architectural Rating</div>
-                    <div className="text-[10px] text-tally-text-secondary font-medium leading-relaxed max-w-[200px]">
-                      Weighted across execution, speed, and approach relative to performance baseline.
+              <div className="lg:col-span-5 xl:col-span-4 flex">
+                <div className={`w-full p-10 rounded-tally-xl border flex flex-col items-center justify-center gap-6 shadow-sm ${getScoreBg(report.metrics.overallScore)}`}>
+                    <CircularScore score={report.metrics.overallScore} />
+                    <div className="text-center">
+                      <div className="text-tally-text-primary font-bold text-sm uppercase tracking-widest mb-1">Architectural Rating</div>
+                      <div className="text-[10.5px] text-tally-text-secondary font-medium leading-relaxed max-w-[220px]">
+                        Weighted across execution, speed, and approach relative to performance baseline.
+                      </div>
                     </div>
-                  </div>
+                </div>
               </div>
            </div>
         </motion.div>

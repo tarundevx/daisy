@@ -118,6 +118,8 @@ export function CodeAssessment() {
         scenarioId: 'rate_limiter',
         sessionState: { 
           passed: results?.numFailedTestSuites === 0,
+          numPassedTests: results?.numPassedTests || 0,
+          numTotalTests: results?.numTotalTests || 0,
           code: files['middleware.js'].file.contents,
           output: results?.rawOutput
         }
@@ -136,6 +138,8 @@ export function CodeAssessment() {
         sessionState: { 
           code: files['middleware.js'].file.contents,
           testsPassed: testResults?.numFailedTestSuites === 0,
+          numPassedTests: testResults?.numPassedTests || 0,
+          numTotalTests: testResults?.numTotalTests || 0,
           output: testResults?.rawOutput
         }
       });

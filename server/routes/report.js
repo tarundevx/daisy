@@ -37,18 +37,25 @@ router.get('/:sessionId', async (req, res) => {
     if (!reportData || req.query.refresh === 'true') {
       const prompt = `You are a Senior Technical Engineering Manager. Analyze this candidate's interactive coding session. You will receive a history of their 'npm test' and 'final_code_submission' events containing their code iterations and terminal outputs.
       
-      Look at their sequence of actions. Did they struggle and iterate with many failing 'npm test' runs, or did they instantly write confident code and submit it? 
+      Look at their sequence of actions. Did they struggle and iterate with many failing 'npm test' runs, or did they instantly write confident code and submit it without ever failing or exploring? 
       Analyze their ACTUAL behavioral workflow based on the raw terminal 'output' recorded. Are they systematically debugging errors step-by-step by reading the errors, or brute-forcing/spamming 'Submit'?
+      
+      BEHAVIORAL INTEGRITY CHECK:
+      High Integrity: Transitions from failure to success, multiple test runs, realistic time taken (> 5 mins).
+      Low Integrity/Suspicious: Instant perfect submission, 0 failed tests, suspiciously fast completion (< 2 mins).
+      
       Generate highly niche, tailored insights based strictly on how they behaved during the session relative to the test outputs.
       
       CRITICAL INSTRUCTION: You MUST populate 'strengths', 'areas', and 'topics' with at least 1-3 highly personalized behavioral or technical string items each. NEVER leave them empty.
       
-      Format:
+      Format (ALL numeric fields MUST be between 0 and 100):
       {
-        "correctness": number, 
-        "timeComplexity": number, 
-        "communication": number, 
-        "edgeCaseHandling": number,
+        "correctness": number (0-100), 
+        "timeComplexity": number (0-100), 
+        "communication": number (0-100), 
+        "edgeCaseHandling": number (0-100),
+        "integrityScore": number (0-100),
+        "integrityAnalysis": "Short specific behavioral summary (e.g., 'Verified iterative debugging session')",
         "strengths": ["string"], 
         "areas": ["string"], 
         "topics": ["string"]
@@ -116,6 +123,30 @@ router.get('/:sessionId', async (req, res) => {
 
     const isCode = session.scenario_id === 'rate_limiter';
 
+    // Finding the latest and most granular test result from the event history
+    let finalTestsPassed = 0;
+    let finalTotalTests = 0;
+    let foundGranularResults = false;
+
+    // Search from latest to earliest for granular counts
+    for (let i = events.length - 1; i >= 0; i--) {
+        const eData = typeof events[i].event_data === 'string' ? JSON.parse(events[i].event_data || '{}') : (events[i].event_data || {});
+        const sState = eData.sessionState || eData;
+        
+        if (sState.numTotalTests > 0) {
+            finalTestsPassed = sState.numPassedTests || 0;
+            finalTotalTests = sState.numTotalTests;
+            foundGranularResults = true;
+            break; 
+        }
+    }
+
+    const testSummary = isCode 
+      ? (foundGranularResults 
+           ? `${finalTestsPassed}/${finalTotalTests}` 
+           : `${detailedLog.filter(l => l.status === 'Passed').length}/${Math.max(1, detailedLog.filter(l => l.status === 'Passed' || l.status === 'Failed').length)}`)
+      : null;
+
     const fullReport = {
       candidateName: session.candidate_name || 'Anonymous',
       date: new Date(session.started_at).toISOString().split('T')[0],
@@ -125,10 +156,14 @@ router.get('/:sessionId', async (req, res) => {
         duration: durationString,
       },
       metrics: {
-        overallScore: Math.round(((reportData.correctness || 0) + (reportData.timeComplexity || 0) + (reportData.edgeCaseHandling || 0)) / 3) || reportData.correctness || 0,
-        testsPassed: isCode ? `${detailedLog.filter(l => l.status === 'Passed' || l.status === 'success').length}/${Math.max(1, detailedLog.filter(l => l.status === 'Passed' || l.status === 'Failed' || l.status === 'success').length)}` : null,
+        overallScore: Math.round(((reportData.correctness || 0) + (reportData.timeComplexity || 0) + (reportData.edgeCaseHandling || 0) + (reportData.integrityScore || 0)) / 4) || reportData.correctness || 0,
+        testsPassed: testSummary,
         commandsUsed: events.length,
         efficiency: reportData.timeComplexity ? `${reportData.timeComplexity}%` : "N/A",
+        integrity: {
+           score: reportData.integrityScore || 90,
+           analysis: reportData.integrityAnalysis || "Standard engineering workflow."
+        }
       },
       insights: {
         strengths: reportData.strengths || [],
