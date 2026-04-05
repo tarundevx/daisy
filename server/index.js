@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config({ path: '../.env' }); // load from root
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const { initializeTenant, seedKnowledgeBase } = require('./services/hydraService');
 
@@ -18,25 +19,27 @@ app.use('/api/session', sessionRoutes);
 app.use('/api/report', reportRoutes);
 app.use('/api/scenario', scenarioRoutes);
 
-app.get('/health', (req, res) => res.send('Daisy Backend OK'));
+app.get('/api/health', (req, res) => res.send('Daisy Backend OK'));
 
-// Server Startup
+// Server Startup visualization
 (async () => {
-  try {
-    console.log("Starting backend...");
-    await initializeTenant();
-    await seedKnowledgeBase();
-    console.log("Database initialized. 5 scenarios loaded.");
-  } catch (err) {
-    console.error("HydraDB boot error. Server will continue.", err);
+  if (process.env.SKIP_INIT !== 'true') {
+    try {
+      console.log("Starting backend initialization...");
+      await initializeTenant();
+      await seedKnowledgeBase();
+      console.log("Database initialized.");
+    } catch (err) {
+      console.error("HydraDB boot error. Server will continue.", err);
+    }
   }
 
-  app.listen(PORT, () => {
-    console.log(`Server ready on port ${PORT}`);
-  });
+  if (require.main === module) {
+    app.listen(PORT, () => {
+      console.log(`Server ready on port ${PORT}`);
+    });
+  }
 })();
 
-// Prevent unhandled rejections from crashing the server
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
+// Export for Vercel Serverless Functions
+module.exports = app;
