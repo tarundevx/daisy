@@ -5,6 +5,7 @@ import axios from 'axios';
 import { 
   Shield, Code, Lock, ArrowRight, LogOut, CheckCircle2, AlertCircle, ChevronRight, Activity, Terminal
 } from 'lucide-react';
+import { io } from 'socket.io-client';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -13,6 +14,21 @@ export default function Dashboard() {
   const [interviewCode, setInterviewCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!user) return;
+    
+    const socket = io(window.location.origin.replace('5173', '3000'));
+    
+    socket.emit('join_lobby', {
+      candidateName: user.name,
+      isVerified: isVerified
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user, isVerified]);
 
   // Auto-verify if already verified in session (optional enhancement)
   // For now, we'll follow the flow strictly

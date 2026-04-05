@@ -8,7 +8,10 @@ import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 
-const socket = io(window.location.origin.replace('5173', '3000'));
+const socketURL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3000' 
+  : `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}`;
+const socket = io(socketURL);
 
 const StatCard = ({ icon, label, value, color }) => (
   <div className="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-md">
@@ -55,7 +58,7 @@ export default function AdminDashboard() {
     fetchData();
     
     // Connect to Precision Tracker
-    const socket = io(window.location.origin.replace('5173', '3000'));
+    const socket = io(socketURL);
 
     socket.emit('join_admin_room');
 
@@ -137,7 +140,12 @@ export default function AdminDashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <StatCard icon={<Users />} label="Total Candidates" value={candidates.length} color="bg-blue-500 text-blue-400" />
-          <StatCard icon={<Activity />} label="Sessions" value={liveSessions.length} color="bg-emerald-500 text-emerald-400" />
+          <StatCard 
+            icon={<Activity />} 
+            label="Live Active Sessions" 
+            value={liveSessions.filter(ls => ls.scenario_id !== 'Lobby' && ls.scenario_id !== 'Authenticating').length} 
+            color="bg-emerald-500 text-emerald-400" 
+          />
           <StatCard icon={<ClipboardList />} label="Total Assessments" value={sessions.length} color="bg-purple-500 text-purple-400" />
         </div>
 
@@ -217,23 +225,28 @@ export default function AdminDashboard() {
                       No active sessions currently.
                    </div>
                 )}
-                {liveSessions.map(ls => (
-                   <div key={ls.id} className="p-4 rounded-3xl bg-white/5 border border-white/5 group hover:border-emerald-500/30 transition-all">
-                      <div className="flex justify-between items-start mb-2">
-                         <div className="font-bold text-gray-200">{ls.candidate_name}</div>
-                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                      </div>
-                      <div className="text-xs font-mono text-indigo-400 mb-3 capitalize">
-                         Scenario: {ls.scenario_id.replace(/_/g, ' ')}
-                      </div>
-                      <div className="p-3 bg-black/40 rounded-2xl flex flex-col gap-1 border border-white/5">
-                         <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Latest Action</div>
-                         <div className="text-xs text-gray-300 font-mono italic">
-                            &gt; {ls.last_event || 'Just started...'}
+                {liveSessions.map(ls => {
+                   const isLobby = ls.scenario_id === 'Lobby' || ls.scenario_id === 'Authenticating';
+                   return (
+                    <div key={ls.id} className={`p-4 rounded-3xl bg-white/5 border border-white/5 group hover:border-emerald-500/30 transition-all ${isLobby ? 'opacity-60 saturate-50' : ''}`}>
+                       <div className="flex justify-between items-start mb-2">
+                          <div className="font-bold text-gray-200">{ls.candidate_name}</div>
+                          <div className={`w-2 h-2 rounded-full animate-pulse ${isLobby ? 'bg-gray-500' : 'bg-emerald-500'}`}></div>
+                       </div>
+                       <div className={`text-xs font-mono mb-3 capitalize ${isLobby ? 'text-gray-500' : 'text-indigo-400'}`}>
+                          {isLobby ? (ls.scenario_id === 'Authenticating' ? 'Verification Screen' : 'Main Dashboard') : `Scenario: ${ls.scenario_id.replace(/_/g, ' ')}`}
+                       </div>
+                       {!isLobby && (
+                         <div className="p-3 bg-black/40 rounded-2xl flex flex-col gap-1 border border-white/5">
+                            <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Latest Action</div>
+                            <div className="text-xs text-gray-300 font-mono italic">
+                               &gt; {ls.last_event || 'Just started...'}
+                            </div>
                          </div>
-                      </div>
-                   </div>
-                ))}
+                       )}
+                    </div>
+                   );
+                })}
              </div>
           </div>
 

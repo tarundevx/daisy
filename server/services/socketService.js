@@ -38,12 +38,24 @@ const initSocket = (server) => {
         last_event: 'Connected'
       });
 
-      // Broadcast the FULL list to all admins instantly
       io.to('admins').emit('update_live_sessions', Array.from(activeSessions.values()));
       console.log(`Candidate ${candidateName} is now LIVE in socket ${socket.id}`);
     });
+    
+    // 3. Join Lobby (Candidate not yet in sandbox)
+    socket.on('join_lobby', ({ candidateName, isVerified }) => {
+       socket.candidateName = candidateName;
+       activeSessions.set(socket.id, {
+          id: socket.id,
+          candidate_name: candidateName,
+          scenario_id: isVerified ? 'Lobby' : 'Authenticating',
+          connectedAt: new Date(),
+          last_event: isVerified ? 'Selecting Scenario' : 'Entering Code'
+       });
+       io.to('admins').emit('update_live_sessions', Array.from(activeSessions.values()));
+    });
 
-    // 3. Real-time Activity Relay
+    // 4. Real-time Activity Relay
     socket.on('session_event', (event) => {
       const session = activeSessions.get(socket.id);
       if (session) {
@@ -87,4 +99,21 @@ const getIO = () => {
   return io;
 };
 
-module.exports = { initSocket, getIO };
+const notifyAdmins = () => {
+  if (!io) return;
+  io.to('admins').emit('update_live_sessions', Array.from(activeSessions.values()));
+};
+
+const updateSessionEvent = (sessionId, lastEvent) => {
+  if (!io) return;
+  // Find session by sessionId in the map
+  for (let [socketId, session] of activeSessions.entries()) {
+    if (session.sessionId === sessionId) {
+      session.last_event = lastEvent;
+      notifyAdmins();
+      break;
+    }
+  }
+};
+
+module.exports = { initSocket, getIO, notifyAdmins, updateSessionEvent };

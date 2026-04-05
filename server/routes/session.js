@@ -5,7 +5,7 @@ const db = require('../db');
 const hydraService = require('../services/hydraService');
 const scenarioEngine = require('../services/scenarioEngine');
 const { logEvent } = require('../services/eventLogger');
-const { getIO } = require('../services/socketService');
+const { updateSessionEvent, notifyAdmins } = require('../services/socketService');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -76,17 +76,7 @@ router.post('/command', async (req, res) => {
       await logEvent(sessionId, 'command_executed', eventPayload);
       
       // Real-time Push to Admins
-      try {
-        const io = getIO();
-        io.to('admins').emit('SESSION_ACTIVITY', {
-          sessionId,
-          command,
-          output: eventPayload.output,
-          type: 'command'
-        });
-      } catch (e) {
-        console.warn("Could not push real-time update:", e.message);
-      }
+      updateSessionEvent(sessionId, command);
     } catch (dbErr) {
       console.warn("Could not log command to database:", dbErr.message);
     }
@@ -167,15 +157,7 @@ router.post('/end', async (req, res) => {
       await logEvent(sessionId, 'session_ended', { userId, score: stats.solved ? 100 : 0 });
 
       // Real-time Push to Admins: Instantly remove from live count
-      try {
-        const io = getIO();
-        io.to('admins').emit('CANDIDATE_DISCONNECTED', {
-          sessionId,
-          userId
-        });
-      } catch (e) {
-        console.warn("Could not push real-time disconnect:", e.message);
-      }
+      notifyAdmins();
     } catch (dbErr) {
       console.warn("Could not update session record in database:", dbErr.message);
     }
