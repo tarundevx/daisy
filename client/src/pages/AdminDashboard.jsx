@@ -34,14 +34,12 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [sessRes, candRes, liveRes] = await Promise.all([
+      const [sessRes, candRes] = await Promise.all([
         axios.get('/api/admin/sessions'),
-        axios.get('/api/admin/candidates'),
-        axios.get('/api/admin/live')
+        axios.get('/api/admin/candidates')
       ]);
       setSessions(sessRes.data);
       setCandidates(candRes.data);
-      setLiveSessions(liveRes.data);
     } catch (err) {
       console.error('Admin Dashboard Fetch Error:', err);
     } finally {
@@ -57,7 +55,7 @@ export default function AdminDashboard() {
 
     socket.emit('join_admin_room');
 
-    socket.on('ACTIVE_SESSIONS_UPDATE', (updatedSessions) => {
+    socket.on('update_live_sessions', (updatedSessions) => {
       console.log('Precision Sync:', updatedSessions);
       setLiveSessions(updatedSessions);
     });
@@ -109,12 +107,10 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <StatCard icon={<Users />} label="Total Candidates" value={candidates.length} color="bg-blue-500 text-blue-400" />
           <StatCard icon={<Activity />} label="Sessions" value={liveSessions.length} color="bg-emerald-500 text-emerald-400" />
           <StatCard icon={<ClipboardList />} label="Total Assessments" value={sessions.length} color="bg-purple-500 text-purple-400" />
-          <StatCard icon={<AlertCircle />} label="Avg. Score" value={`${Math.round(sessions.reduce((a, b) => a + (b.score || 0), 0) / (sessions.length || 1))}%`} color="bg-amber-500 text-amber-400" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -142,7 +138,7 @@ export default function AdminDashboard() {
                       <tr className="text-left text-gray-500 text-xs font-bold uppercase tracking-widest border-b border-white/5">
                          <th className="pb-4 px-4">Candidate</th>
                          <th className="pb-4 px-4">Status</th>
-                         <th className="pb-4 px-4">Avg Score</th>
+                         <th className="pb-4 px-4">Score</th>
                          <th className="pb-4 px-4 text-right">Actions</th>
                       </tr>
                    </thead>
@@ -180,8 +176,10 @@ export default function AdminDashboard() {
              </div>
           </div>
 
-          {/* Live Monitoring Panel */}
-          <div className="bg-white/5 border border-white/10 rounded-[40px] p-8 backdrop-blur-xl">
+          {/* Right Column Layout */}
+          <div className="flex flex-col gap-8">
+             {/* Live Monitoring Panel */}
+             <div className="bg-white/5 border border-white/10 rounded-[40px] p-8 backdrop-blur-xl">
              <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
                 <Activity className="w-6 h-6 text-emerald-400" /> Live Activity
              </h2>
@@ -210,6 +208,46 @@ export default function AdminDashboard() {
                 ))}
              </div>
           </div>
+
+          {/* Session History Panel */}
+          <div className="bg-white/5 border border-white/10 rounded-[40px] p-8 backdrop-blur-xl">
+             <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
+                <ClipboardList className="w-6 h-6 text-purple-400" /> Session History
+             </h2>
+             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4f46e5 transparent' }}>
+                {sessions.length === 0 && (
+                   <div className="text-center py-12 text-gray-500 italic text-sm">
+                      No historical sessions.
+                   </div>
+                )}
+                {sessions.map(s => (
+                   <div key={s.id} className="p-4 rounded-3xl bg-white/5 border border-white/5 flex flex-col gap-2 transition-all hover:bg-white/10">
+                      <div className="flex justify-between items-center">
+                         <span className="font-bold text-gray-200">{s.candidate_name || 'Candidate'}</span>
+                         <span className="text-xs text-gray-500 font-mono">
+                            {new Date(s.started_at).toLocaleDateString()}
+                         </span>
+                      </div>
+                      <div className="text-xs font-mono text-purple-400 capitalize">
+                         {s.scenario_id ? s.scenario_id.replace(/_/g, ' ') : 'Unknown Scenario'}
+                      </div>
+                      <div className="flex justify-between items-center mt-3">
+                         <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full ${s.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
+                            {s.status}
+                         </span>
+                         <button 
+                            onClick={() => navigate(`/report/${s.id}`)}
+                            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1 font-bold"
+                         >
+                            View Report <ExternalLink className="w-3 h-3" />
+                         </button>
+                      </div>
+                   </div>
+                ))}
+             </div>
+          </div>
+
+        </div>
         </div>
       </div>
     </div>

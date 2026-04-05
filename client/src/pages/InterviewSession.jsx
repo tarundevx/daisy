@@ -58,11 +58,10 @@ export default function InterviewSession() {
     
     const socket = io(window.location.origin.replace('5173', '3000'));
     
-    socket.emit('join_session_room', { 
+    socket.emit('join_code_session', { 
       sessionId, 
-      userId: user.id, 
       candidateName: user.name,
-      scenarioId: activeScenario.id
+      scenario: activeScenario.id
     });
 
     return () => {

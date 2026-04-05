@@ -9,6 +9,7 @@ import 'xterm/css/xterm.css';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
 
 export function CodeAssessment() {
   const [activeFile, setActiveFile] = useState('middleware.js');
@@ -67,6 +68,22 @@ export function CodeAssessment() {
     }
     init();
   }, [user?.id]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const socket = io(window.location.origin.replace('5173', '3000'));
+    
+    socket.emit('join_code_session', {
+      sessionId: sessionId,
+      candidateName: user?.name || 'Anonymous Candidate',
+      scenario: 'rate_limiter'
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [sessionId, user]);
 
   const handleEditorChange = (value) => {
     if (activeFileRef.current !== 'middleware.js') return;
