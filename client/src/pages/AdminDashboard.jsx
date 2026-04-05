@@ -26,7 +26,9 @@ export default function AdminDashboard() {
   const [sessions, setSessions] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [liveSessions, setLiveSessions] = useState([]);
+  const [commonCode, setCommonCode] = useState('');
   const [loading, setLoading] = useState(true);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -34,12 +36,14 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [sessRes, candRes] = await Promise.all([
+      const [sessRes, candRes, settingsRes] = await Promise.all([
         axios.get('/api/admin/sessions'),
-        axios.get('/api/admin/candidates')
+        axios.get('/api/admin/candidates'),
+        axios.get('/api/admin/settings')
       ]);
       setSessions(sessRes.data);
       setCandidates(candRes.data);
+      setCommonCode(settingsRes.data.common_access_code);
     } catch (err) {
       console.error('Admin Dashboard Fetch Error:', err);
     } finally {
@@ -89,6 +93,30 @@ export default function AdminDashboard() {
               HR Admin Console
             </h1>
             <p className="text-gray-400 font-medium">Monitoring platform health and candidate performance.</p>
+            
+            {/* Global Access Code Widget */}
+            <div className="mt-6 flex items-center gap-4 bg-white/5 border border-white/10 p-3 pl-5 rounded-2xl w-fit backdrop-blur-md">
+              <div className="flex flex-col">
+                <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Global Access Code</span>
+                <span className="font-mono text-indigo-400 font-bold tracking-tighter">{commonCode || 'Loading...'}</span>
+              </div>
+              <button 
+                onClick={async () => {
+                  if (!window.confirm('Regenerate common access code? Old code will stop working immediately.')) return;
+                  setIsRegenerating(true);
+                  try {
+                    const res = await axios.post('/api/admin/settings/regenerate');
+                    setCommonCode(res.data.common_access_code);
+                  } catch (e) { console.error(e); }
+                  setIsRegenerating(false);
+                }}
+                disabled={isRegenerating}
+                className="p-2 hover:bg-white/10 rounded-xl transition-all text-gray-400 hover:text-white"
+                title="Regenerate Global Code"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <button 

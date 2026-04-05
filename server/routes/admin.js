@@ -36,7 +36,7 @@ router.get('/sessions', async (req, res) => {
 router.get('/candidates', async (req, res) => {
   try {
     const result = await db.query(`
-      SELECT u.id, u.name, u.email, u.created_at,
+      SELECT u.id, u.name, u.email, u.created_at, u.access_code,
              COUNT(s.id) as total_sessions,
              AVG(s.score) FILTER (WHERE s.status = 'completed') as avg_score,
              (SELECT id FROM sessions WHERE user_id = u.id ORDER BY started_at DESC LIMIT 1) as latest_session_id
@@ -75,6 +75,29 @@ router.get('/live', async (req, res) => {
   } catch (err) {
     console.error('Admin Live Monitor Error:', err);
     res.status(500).json({ error: 'Failed to fetch live data' });
+  }
+});
+
+// 4. Fetch Global Settings (Access Code)
+router.get('/settings', async (req, res) => {
+  try {
+    const result = await db.query("SELECT value FROM system_settings WHERE key = 'common_access_code'");
+    res.json({ common_access_code: result.rows[0]?.value });
+  } catch (err) {
+    console.error('Admin Fetch Settings Error:', err);
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+// 5. Regenerate Global Access Code
+router.post('/settings/regenerate', async (req, res) => {
+  try {
+    const newCode = 'DAISY-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    await db.query("UPDATE system_settings SET value = $1 WHERE key = 'common_access_code'", [newCode]);
+    res.json({ common_access_code: newCode });
+  } catch (err) {
+    console.error('Admin Regenerate Code Error:', err);
+    res.status(500).json({ error: 'Failed to regenerate code' });
   }
 });
 

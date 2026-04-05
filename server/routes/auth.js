@@ -46,6 +46,29 @@ router.post('/signup', async (req, res) => {
   }
 });
 
+// Verify Interview Code (Global)
+router.post('/verify-code', async (req, res) => {
+  const { code } = req.body;
+  try {
+    const result = await db.query("SELECT value FROM system_settings WHERE key = 'common_access_code'");
+    const commonCode = result.rows[0]?.value;
+    
+    // Hyper-resilient comparison
+    const normalizedIn = (code || '').toString().trim().toUpperCase();
+    const normalizedDB = (commonCode || '').toString().trim().toUpperCase();
+
+    console.log(`[SECURITY] Code Verification - Received: [${normalizedIn}], Expected: [${normalizedDB}]`);
+    
+    if (!normalizedIn || normalizedIn !== normalizedDB) {
+      return res.status(401).json({ error: 'Invalid interview code. Please check with your HR administrator.' });
+    }
+    res.json({ success: true, message: 'Code verified successfully' });
+  } catch (error) {
+    console.error('Verify code error:', error);
+    res.status(500).json({ error: 'Server security verification failed' });
+  }
+});
+
 // Auth Middleware (to use in other routes)
 const auth = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');

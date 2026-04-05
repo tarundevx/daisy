@@ -3,182 +3,199 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis
-} from 'recharts';
-import { Play, Activity, History, Trophy, TrendingUp, LogOut } from 'lucide-react';
+  Shield, Code, Lock, ArrowRight, LogOut, CheckCircle2, AlertCircle, ChevronRight, Activity, Terminal
+} from 'lucide-react';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [stats, setStats] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isVerified, setIsVerified] = useState(false);
+  const [interviewCode, setInterviewCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const [statsRes, historyRes] = await Promise.all([
-          axios.get('/api/dashboard/stats'),
-          axios.get('/api/dashboard/history')
-        ]);
-        setStats(statsRes.data);
-        setHistory(historyRes.data.history);
-      } catch (err) {
-        console.error('Failed to fetch dashboard data:', err);
-      } finally {
-        setLoading(false);
+  // Auto-verify if already verified in session (optional enhancement)
+  // For now, we'll follow the flow strictly
+
+  const handleVerify = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const res = await axios.post('/api/auth/verify-code', { 
+        email: user?.email, 
+        code: interviewCode 
+      });
+      if (res.data.success) {
+        setIsVerified(true);
       }
-    };
-    fetchDashboardData();
-  }, []);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Invalid interview code. Please verify with HR.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  if (loading) {
+  if (!isVerified) {
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-6 bg-[radial-gradient(circle_at_50%_-20%,#312e81,black)]">
+        <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700">
+          <div className="text-center mb-10">
+            <h1 className="text-4xl font-extrabold tracking-tighter mb-4 text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
+              Daisy Assessment
+            </h1>
+            <p className="text-gray-400 font-medium">Please enter your HR-provided interview code to continue.</p>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 p-8 rounded-[40px] backdrop-blur-2xl shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+            
+            <form onSubmit={handleVerify} className="space-y-6">
+              <div>
+                <label className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3 block">
+                  Interview Access Code
+                </label>
+                <div className="relative group">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-indigo-400 transition-colors" />
+                  <input 
+                    type="password"
+                    placeholder="HR-XXXXXX"
+                    value={interviewCode}
+                    onChange={(e) => setInterviewCode(e.target.value.toUpperCase())}
+                    className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white font-mono placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all uppercase tracking-widest"
+                    maxLength={20}
+                    required
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                  <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-400 leading-tight">{error}</p>
+                </div>
+              )}
+
+              <button 
+                type="submit"
+                disabled={loading || !interviewCode}
+                className="w-full bg-white text-black hover:bg-gray-200 font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 group disabled:opacity-50 shadow-xl shadow-white/5"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    Unlock Assessment
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+
+          <button 
+            onClick={logout}
+            className="mt-8 text-gray-500 hover:text-white transition-colors text-sm font-medium flex items-center gap-2 mx-auto"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
+        </div>
       </div>
     );
   }
 
-  const radarData = stats?.topics?.map(t => ({
-    subject: t.scenario_id === 'rate_limiter' ? 'Code: Rate Limiter' : t.scenario_id.replace(/_/g, ' '),
-    A: parseInt(t.avg_score),
-    fullMark: 100
-  })) || [];
-
-  const lineData = stats?.progress?.map(p => ({
-    name: new Date(p.day).toLocaleDateString(),
-    score: parseInt(p.avg_score)
-  })) || [];
-
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-6 font-sans">
-      {/* Header */}
-      <header className="max-w-7xl mx-auto flex justify-between items-center mb-12">
-        <div>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
-            Welcome, {user?.name}
-          </h1>
-          <p className="text-gray-400 mt-1">Your evolution continues.</p>
-        </div>
-        <div className="flex gap-4">
-          <button 
-            onClick={() => navigate('/code')}
-            className="bg-white/5 hover:bg-white/10 text-white px-6 py-2.5 rounded-xl font-bold flex items-center transition-all border border-white/10"
-          >
-            Code Sandbox
-          </button>
-          <button 
-            onClick={() => navigate('/session/prod_api_outage')}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-bold flex items-center transition-all shadow-lg shadow-indigo-600/20"
-          >
-            <Play className="w-5 h-5 mr-2" /> Feature Sandbox
-          </button>
+    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-12 overflow-hidden bg-[radial-gradient(circle_at_50%_-20%,#312e81,black)]">
+      <div className="max-w-6xl mx-auto h-full flex flex-col">
+        {/* Header */}
+        <header className="flex justify-between items-center mb-16 animate-in fade-in slide-in-from-top-4 duration-700">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+              <span className="text-emerald-500 text-xs font-bold uppercase tracking-widest">Code Verified</span>
+            </div>
+            <h1 className="text-4xl font-extrabold tracking-tight">Assessment Sandbox</h1>
+            <p className="text-gray-400 mt-2 font-medium">Welcome back, {user?.name}. Select your environment to begin.</p>
+          </div>
           <button 
             onClick={logout}
-            className="bg-white/5 hover:bg-white/10 text-gray-400 p-2.5 rounded-xl transition-all"
+            className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all group"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-5 h-5 text-gray-500 group-hover:text-white" />
+          </button>
+        </header>
+
+        {/* Selection Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 items-center">
+          {/* Feature Fix Sandbox */}
+          <button 
+            onClick={() => navigate('/session/prod_api_outage')}
+            className="group relative bg-white/5 border border-white/10 p-10 rounded-[60px] text-left transition-all hover:bg-white/10 hover:border-indigo-500/50 hover:-translate-y-2 h-full flex flex-col justify-between overflow-hidden"
+          >
+            <div className="absolute -right-20 -top-20 w-64 h-64 bg-indigo-600/10 rounded-full blur-[80px] group-hover:bg-indigo-600/20 transition-all"></div>
+            
+            <div>
+              <div className="w-16 h-16 bg-indigo-600/20 text-indigo-400 rounded-3xl flex items-center justify-center mb-10 group-hover:bg-indigo-600/30 transition-all">
+                <Shield className="w-8 h-8" />
+              </div>
+              <h2 className="text-3xl font-bold mb-4 tracking-tight">Feature Fix Sandbox</h2>
+              <p className="text-gray-400 leading-relaxed text-lg font-medium">
+                Solve infrastructure outages, debug system logs, and resolve performance bottlenecks in a live Linux terminal environment.
+              </p>
+            </div>
+
+            <div className="mt-20 flex items-center justify-between">
+              <div className="flex gap-4">
+                <div className="flex items-center gap-1.5 text-xs font-mono text-gray-500">
+                  <Terminal className="w-3.5 h-3.5" />
+                  Terminal
+                </div>
+                <div className="flex items-center gap-1.5 text-xs font-mono text-gray-500">
+                  <Activity className="w-3.5 h-3.5" />
+                  DevOps
+                </div>
+              </div>
+              <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all">
+                <ChevronRight className="w-6 h-6" />
+              </div>
+            </div>
+          </button>
+
+          {/* Code Sandbox */}
+          <button 
+            onClick={() => navigate('/code')}
+            className="group relative bg-white/5 border border-white/10 p-10 rounded-[60px] text-left transition-all hover:bg-white/10 hover:border-purple-500/50 hover:-translate-y-2 h-full flex flex-col justify-between overflow-hidden"
+          >
+            <div className="absolute -right-20 -top-20 w-64 h-64 bg-purple-600/10 rounded-full blur-[80px] group-hover:bg-purple-600/20 transition-all"></div>
+            
+            <div>
+              <div className="w-16 h-16 bg-purple-600/20 text-purple-400 rounded-3xl flex items-center justify-center mb-10 group-hover:bg-purple-600/30 transition-all">
+                <Code className="w-8 h-8" />
+              </div>
+              <h2 className="text-3xl font-bold mb-4 tracking-tight">Code Sandbox</h2>
+              <p className="text-gray-400 leading-relaxed text-lg font-medium">
+                Implement high-performance algorithms, fix logical bugs, and build robust features using a full Monaco editor workspace.
+              </p>
+            </div>
+
+            <div className="mt-20 flex items-center justify-between">
+              <div className="flex gap-4">
+                <div className="flex items-center gap-1.5 text-xs font-mono text-gray-500">
+                  <Shield className="w-3.5 h-3.5" />
+                  Development
+                </div>
+                <div className="flex items-center gap-1.5 text-xs font-mono text-gray-500">
+                  <Activity className="w-3.5 h-3.5" />
+                  Architecture
+                </div>
+              </div>
+              <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all">
+                <ChevronRight className="w-6 h-6" />
+              </div>
+            </div>
           </button>
         </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Stats Grid */}
-        <div className="lg:col-span-2 space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <StatCard 
-              icon={<Trophy className="text-yellow-400" />} 
-              label="Average Score" 
-              value={`${Math.round(history.reduce((acc, curr) => acc + (curr.score || 0), 0) / (history.filter(s => s.score !== null).length || 1))}%`} 
-            />
-            <StatCard icon={<TrendingUp className="text-green-400" />} label="Total Sessions" value={history.length} />
-            <StatCard icon={<Activity className="text-blue-400" />} label="Hints Used" value={stats?.hints || 0} />
-          </div>
-
-          {/* Line Chart */}
-          <div className="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-sm">
-            <h3 className="text-xl font-bold mb-6 flex items-center">
-              <TrendingUp className="w-5 h-5 mr-2 text-indigo-400" /> Progress Over Time
-            </h3>
-            <div className="h-[300px] w-full" style={{ minHeight: '300px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={lineData}>
-                  <XAxis dataKey="name" stroke="#666" fontSize={12} />
-                  <YAxis stroke="#666" fontSize={12} domain={[0, 100]} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '12px' }}
-                    itemStyle={{ color: '#fff' }}
-                  />
-                  <Line type="monotone" dataKey="score" stroke="#6366f1" strokeWidth={3} dot={{ fill: '#6366f1', r: 5 }} activeDot={{ r: 8 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-8">
-          {/* Radar Chart */}
-          <div className="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-sm">
-            <h3 className="text-xl font-bold mb-6 flex items-center">
-              <Activity className="w-5 h-5 mr-2 text-purple-400" /> Mastery Radar
-            </h3>
-            <div className="h-[250px] w-full" style={{ minHeight: '250px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                  <PolarGrid stroke="#333" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#888', fontSize: 10 }} />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                  <Radar name="User" dataKey="A" stroke="#a855f7" fill="#a855f7" fillOpacity={0.6} />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* History List */}
-          <div className="bg-white/5 border border-white/10 p-6 rounded-3xl h-[400px] flex flex-col overflow-hidden">
-            <h3 className="text-xl font-bold mb-6 flex items-center">
-              <History className="w-5 h-5 mr-2 text-gray-400" /> Recent Sessions
-            </h3>
-            <div className="space-y-4 overflow-y-auto flex-1 pr-2 custom-scrollbar">
-              {history.map((session) => (
-                <div 
-                  key={session.id} 
-                  onClick={() => navigate(`/report/${session.id}`)}
-                  className="p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all cursor-pointer group"
-                >
-                  <div className="flex justify-between items-start mb-1">
-                    <span className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors capitalize">
-                      {session.scenario_id === 'rate_limiter' ? 'Code: Rate Limiter' : session.scenario_id.replace(/_/g, ' ')}
-                    </span>
-                    <span className={`text-xs font-mono px-2 py-0.5 rounded ${session.status === 'completed' ? 'bg-green-500/10 text-green-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
-                      {session.score}%
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-widest">
-                    {new Date(session.started_at).toLocaleDateString()}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}
-
-function StatCard({ icon, label, value }) {
-  return (
-    <div className="bg-white/5 border border-white/10 p-6 rounded-3xl flex items-center gap-4">
-      <div className="bg-white/5 p-3 rounded-2xl">
-        {icon}
-      </div>
-      <div>
-        <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">{label}</p>
-        <p className="text-2xl font-bold">{value}</p>
       </div>
     </div>
   );
